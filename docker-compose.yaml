@@ -1,3 +1,16 @@
 version: "3.8"
 services:
-  app:
+  mongo:
+    image: bitnami/mongodb:5.0
+    volumes:
+      - ./initdb/:/docker-entrypoint-initdb.d/:ro
+    env_file:
+      - .env
+    ports:
+      - 27017:27017
+  redis:
+    image: bitnami/redis
+    env_file:
+      - .env
+    ports:
+      - 6379:6379
