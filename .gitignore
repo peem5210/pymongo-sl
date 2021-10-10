@@ -133,3 +133,6 @@ dmypy.json
 /initdb
 playground.ipynb
 
+*.env*
+rcache_profiling.prof
+*.prof
