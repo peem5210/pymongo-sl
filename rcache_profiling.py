@@ -3,7 +3,7 @@ import os
 import sys
 import time
 import random
-    
+
 import cProfile
 import pstats
 import numpy as np
@@ -37,13 +37,14 @@ class RcacheProfiling:
         )
         print("Finished")
         print("Connecting mongo...")
-        self.collection_connections = {}
+        self.collection_connections :dict[str, Collection]= {}
         for prefix in MONGODB_HOST_PREFIXES:
             self.mongo = MongoClient(host = ENV(f"MONGODB_HOST_{prefix}"), port = ENV("MONGODB_PORT", True), username= ENV("MONGODB_USERNAME"), password=ENV("MONGODB_PASSWORD"))
             self.db = self.mongo[ENV("MONGODB_DATABASE")]
             self.collection_connections[prefix] = (self.db[ENV("MONGODB_COLLECTION")])
         print("Finished")
         self.local_cache = {}
+        self.object_list : list[(str,str)]=[]
     def get_cache(self, objectid: str):
         if CACHE_MODE == CacheMode.REDIS:
             return self.redis.get(str(objectid))
@@ -69,21 +70,25 @@ class RcacheProfiling:
             return
         else:
             raise Exception("Exhuasive handling exception")       
-
+    def load_from_db(self):
+        return \
+            [(x['_id'], x['region']) for x in self.collection_connections["SGP_1"].find(limit=NUM_SELECT_FROM_DB, projection=["_id", "region"], filter={"region":"SGP"})] +\
+            [(x['_id'], x['region']) for x in self.collection_connections["ORE_1"].find(limit=NUM_SELECT_FROM_DB, projection=["_id", "region"], filter={"region":"ORE"})]
+            
     def run(self):
         #Load object to memory
         print("fetching all object from the DB")
-        object_list = \
-            [(x['_id'], x['region']) for x in self.collection_connections["SGP_1"].find(limit=NUM_SELECT_FROM_DB, projection=["_id", "region"], filter={"region":"SGP"})] +\
-            [(x['_id'], x['region']) for x in self.collection_connections["SGP_1"].find(limit=NUM_SELECT_FROM_DB, projection=["_id", "region"], filter={"region":"ORE"})]
-            
+        max_iter = len(self.object_list)-1
+        
+        if max_iter + 1 <= 0 :
+            self.object_list = self.load_from_db()
+            max_iter = len(self.object_list)-1
         print("finished")
         #Load object to cache
-        self.populate_cache(object_list)
+        self.populate_cache(self.object_list)
 
         
         #Randomly read object from mongo
-        max_iter = len(object_list)-1
         read_time = []
         update_time = []
         result = []
@@ -92,9 +97,9 @@ class RcacheProfiling:
             print(f"\n\ntesting on {prefix} connection")
             for _ in tqdm(range(NUM_RANDOM)): 
                 rint = random.randint(0, max_iter)
-                object_id, region = object_list[rint]
+                object_id, region = self.object_list[rint]
 
-                if (not IS_CROSS_REGION) and (region not in prefix):
+                if ((not IS_CROSS_REGION) and (region not in prefix)) or ((IS_CROSS_REGION) and (region in prefix)):
                     continue
                 
                 if region not in summary:
@@ -105,26 +110,28 @@ class RcacheProfiling:
                 if CACHE_MODE != CacheMode.IDEAL :
                     region = None
                 if rint == 0:
-                    s1 = time.perf_counter()
+                    s1 = time.time_ns()
                     if CACHE_MODE != CacheMode.IDEAL :
                         region = self.get_cache(object_id)
                     self.read_object(connection, object_id, region=region)
-                    s2 = time.perf_counter()
+                    s2 = time.time_ns()
                     read_time.append(s2-s1)
                 elif rint == 1:
-                    s1 = time.perf_counter()
+                    s1 = time.time_ns()
                     if CACHE_MODE != CacheMode.IDEAL :
                         region = self.get_cache(object_id)
                     self.update_object(connection, object_id,{"$set":{"read":True}} , region=region)
-                    s2 = time.perf_counter()
+                    s2 = time.time_ns()
                     update_time.append(s2-s1)
                     
             "create object"        
             "delete object"
+            read_avg = np.average(read_time) / (10 ** 9)
+            update_avg = np.average(update_time) / (10 ** 9)
             
-            print(f"result:\nread avg ({prefix})[{IS_CROSS_REGION = }]:{np.average(read_time)}\nupdate avg ({prefix})[{IS_CROSS_REGION = }]:{np.average(update_time)}")
+            print(f"result:\nread avg ({prefix})[{IS_CROSS_REGION = }]:{read_avg}\nupdate avg ({prefix})[{IS_CROSS_REGION = }]:{update_avg}")
             print(summary)
-            result.append((prefix, CACHE_MODE.name, np.average(read_time), np.average(update_time), IS_CROSS_REGION))
+            result.append((prefix, CACHE_MODE.name, IS_CROSS_REGION, read_avg, update_avg))
         return result
     
     def create_object(self):
@@ -155,22 +162,19 @@ class RcacheProfiling:
         # return self.collection.find_one_and_delete({"_id:":_id})
     
 def populate_mongo_task(rcache: RcacheProfiling):
-    region = REGIONS[random.randint(0, len(REGIONS)-1)]
-    rcache.collection.insert_one({"region":region, "read":False})
+    rcache.collection_connections["SGP_1"].insert_many([{"region":REGIONS[random.randint(0, len(REGIONS)-1)], "read":False} for _ in range(NUM_INSERT_TO_DB//10)], ordered=False)
 
 def populate_mongo(rcache: RcacheProfiling):
-    # with futures.ProcessPoolExecutor() as pool:
-        for _ in tqdm(range(NUM_INSERT_TO_DB)):
-            # future_result = pool.submit(populate_mongo_task, rcache)  
-            populate_mongo_task(rcache)
-            # future_result.add_done_callback(total_error)
+    print(f"populating mongodb with {NUM_INSERT_TO_DB//10} documents per iteration")
+    for _ in tqdm(range(10)):
+        populate_mongo_task(rcache)
 
 REGIONS = ['SGP', 'ORE']
 NUM_SELECT_FROM_DB = 10_000
 NUM_RANDOM = 1000
 CACHE_MODE = CacheMode.LOCAL
-MONGODB_HOST_PREFIXES = ["SGP_1", "SGP_2", "ORE_1", "ORE_2"]
-NUM_INSERT_TO_DB = 100_000
+MONGODB_HOST_PREFIXES = ["SGP_1", "ORE_1", "SGP_2", "ORE_2"][:2]
+NUM_INSERT_TO_DB = 10_000_000
 IS_CROSS_REGION = False
 
 if __name__ == '__main__':
@@ -231,7 +235,7 @@ if __name__ == '__main__':
                 IS_CROSS_REGION = ICR
                 result += rcache.run()
             
-        pd.DataFrame(data=result, columns=["region", "cache_mode", "average_read_time", "average_update_time", "is_cross_region"]).to_csv("all_result.csv")
+        pd.DataFrame(data=result, columns=["region", "cache_mode", "is_cross_region", "average_read_time", "average_update_time"]).to_csv(f"all_result_{NUM_RANDOM}.csv")
         #  result.append((prefix, CACHE_MODE.name, np.average(read_time), np.average(update_time)))
     else:
         with cProfile.Profile() as pr:
