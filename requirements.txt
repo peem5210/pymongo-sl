@@ -1,0 +1,8 @@
+argparse
+argparse
+pandas
+pymongo
+redis 
+python-dotenv  
+pymongo  
+tqdm

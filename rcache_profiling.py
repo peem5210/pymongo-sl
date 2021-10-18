@@ -1,12 +1,9 @@
-from enum import Enum
 import os
 import sys
 import time
 import random
 
-import cProfile
-import pstats
-import numpy as np
+import argparse
 import pandas as pd
 from pymongo.collection import Collection
 from redis import Redis
@@ -14,8 +11,6 @@ from dotenv import load_dotenv
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 from tqdm import tqdm
-import argparse
-
 from enum import Enum, auto
 
 from rcache.rcache import Rcache
@@ -39,12 +34,13 @@ class RcacheProfiling:
         print("Connecting mongo...")
         self.collection_connections :dict[str, Collection]= {}
         for prefix in MONGODB_HOST_PREFIXES:
-            self.mongo = MongoClient(host = ENV(f"MONGODB_HOST_{prefix}"), port = ENV("MONGODB_PORT", True), username= ENV("MONGODB_USERNAME"), password=ENV("MONGODB_PASSWORD"))
-            self.db = self.mongo[ENV("MONGODB_DATABASE")]
-            self.collection_connections[prefix] = (self.db[ENV("MONGODB_COLLECTION")])
+            print(f'Connecting to {prefix}: {ENV(f"MONGODB_HOST_{prefix}")}')
+            mongo = MongoClient(host = ENV(f"MONGODB_HOST_{prefix}"), port = ENV("MONGODB_PORT", True), username= ENV("MONGODB_USERNAME"), password=ENV("MONGODB_PASSWORD"))
+            db = mongo[ENV("MONGODB_DATABASE")]
+            self.collection_connections[prefix] = (db[ENV("MONGODB_COLLECTION")])
         print("Finished")
         self.local_cache = {}
-        self.object_list : list[(str,str)]=[]
+        self.region_object_list : map[str, list[(ObjectId,str)]]={}
     def get_cache(self, objectid: str):
         if CACHE_MODE == CacheMode.REDIS:
             return self.redis.get(str(objectid))
@@ -70,64 +66,71 @@ class RcacheProfiling:
             return
         else:
             raise Exception("Exhuasive handling exception")       
-    def load_from_db(self):
-        return \
-            [(x['_id'], x['region']) for x in self.collection_connections["SGP_1"].find(limit=NUM_SELECT_FROM_DB, projection=["_id", "region"], filter={"region":"SGP"})] +\
-            [(x['_id'], x['region']) for x in self.collection_connections["ORE_1"].find(limit=NUM_SELECT_FROM_DB, projection=["_id", "region"], filter={"region":"ORE"})]
+    def load_from_db(self, region):
+        assert  NUM_SELECT_FROM_DB < 1000000, f"{NUM_SELECT_FROM_DB < 1000000 = }"
+        return [(x['_id'], x['region']) for x in list(self.collection_connections.values())[0].find(limit=NUM_SELECT_FROM_DB, skip=random.randint(0, 1000000 - NUM_SELECT_FROM_DB), projection=["_id", "region"], filter={"region":region})] 
             
     def run(self):
         #Load object to memory
-        print("fetching all object from the DB")
-        max_iter = len(self.object_list)-1
+        # print("fetching and populating all object from the DB")
+        max_iter = NUM_SELECT_FROM_DB
+
+        if len(self.region_object_list.keys()) == 0:
+            for region in REGIONS:
+                self.region_object_list[region] = self.load_from_db(region)
+        for region in REGIONS:
+            self.populate_cache(self.region_object_list[region])
+        # print("finished")
+        # print(self.region_object_list)
         
-        if max_iter + 1 <= 0 :
-            self.object_list = self.load_from_db()
-            max_iter = len(self.object_list)-1
-        print("finished")
-        #Load object to cache
-        self.populate_cache(self.object_list)
 
         
         #Randomly read object from mongo
-        read_time = []
-        update_time = []
         result = []
         for prefix, connection in self.collection_connections.items():
             summary = {}
             print(f"\n\ntesting on {prefix} connection")
-            for _ in tqdm(range(NUM_RANDOM)): 
-                rint = random.randint(0, max_iter)
-                object_id, region = self.object_list[rint]
+            read_time = []
+            update_time = []
+            for _ in (range(NUM_RANDOM)): 
+                rint = random.randint(0, max_iter-1)
+                object_id, region = None, None
+                if IS_CROSS_REGION:
+                    if prefix.startswith("ORE"):
+                        object_id, region = self.region_object_list["SGP"][rint]
+                    elif prefix.startswith("SGP"):
+                        object_id, region = self.region_object_list["ORE"][rint]
+                    else:
+                        print(f"WTF IS THIS {prefix}")
+                else:
+                    object_id, region = self.region_object_list[prefix[:3]][rint]
 
-                if ((not IS_CROSS_REGION) and (region not in prefix)) or ((IS_CROSS_REGION) and (region in prefix)):
-                    continue
-                
                 if region not in summary:
                     summary[region] = 1
                 else:
                     summary[region] += 1
                 rint = random.randint(0,1)
-                if CACHE_MODE != CacheMode.IDEAL :
-                    region = None
+                
                 if rint == 0:
-                    s1 = time.time_ns()
-                    if CACHE_MODE != CacheMode.IDEAL :
-                        region = self.get_cache(object_id)
-                    self.read_object(connection, object_id, region=region)
-                    s2 = time.time_ns()
+                    s1 = time.perf_counter()
+                    if CACHE_MODE != CacheMode.IDEAL:
+                        self.read_object(connection, object_id, region=self.get_cache(object_id))
+                    else:
+                        self.read_object(connection, object_id, region=region)
+                    s2 = time.perf_counter()
                     read_time.append(s2-s1)
                 elif rint == 1:
-                    s1 = time.time_ns()
-                    if CACHE_MODE != CacheMode.IDEAL :
-                        region = self.get_cache(object_id)
-                    self.update_object(connection, object_id,{"$set":{"read":True}} , region=region)
-                    s2 = time.time_ns()
+                    s1 = time.perf_counter()
+                    if CACHE_MODE != CacheMode.IDEAL:
+                        self.update_object(connection, object_id,{"$set":{"read":True}} , region=self.get_cache(object_id))
+                    else:
+                        self.update_object(connection, object_id,{"$set":{"read":True}}, region=region)
+                    s2 = time.perf_counter()
                     update_time.append(s2-s1)
-                    
             "create object"        
             "delete object"
-            read_avg = np.average(read_time) / (10 ** 9)
-            update_avg = np.average(update_time) / (10 ** 9)
+            read_avg = sum(read_time)/len(read_time) 
+            update_avg = sum(update_time)/len(update_time) 
             
             print(f"result:\nread avg ({prefix})[{IS_CROSS_REGION = }]:{read_avg}\nupdate avg ({prefix})[{IS_CROSS_REGION = }]:{update_avg}")
             print(summary)
@@ -173,7 +176,8 @@ REGIONS = ['SGP', 'ORE']
 NUM_SELECT_FROM_DB = 10_000
 NUM_RANDOM = 1000
 CACHE_MODE = CacheMode.LOCAL
-MONGODB_HOST_PREFIXES = ["SGP_1", "ORE_1", "SGP_2", "ORE_2"][:2]
+MONGODB_HOST_PREFIXES = ["SGP_1", "ORE_1", "SGP_2", "ORE_2"]
+# MONGODB_HOST_PREFIXES = ["ORE_1"]
 NUM_INSERT_TO_DB = 10_000_000
 IS_CROSS_REGION = False
 
@@ -185,11 +189,15 @@ if __name__ == '__main__':
     parser.add_argument('--populate', '-p',action='store_true')
     parser.add_argument('--cross-region', '-c',action='store_true')
     parser.add_argument('--all-test', '-a',action='store_true')
+    parser.add_argument('--output', '-o',default='all_result')
+    parser.add_argument('--connection', default='SGP_1,ORE_1') 
     args = parser.parse_args(sys.argv[1:])
     print(args)
+    MONGODB_HOST_PREFIXES = args.connection.split(',')
     NUM_SELECT_FROM_DB = int(args.select)
     NUM_RANDOM = int(args.random_iter)
     IS_CROSS_REGION = args.cross_region
+    OUTPUT = args.output
     if args.cache_mode == "local":
         CACHE_MODE=CacheMode.LOCAL
     elif args.cache_mode == "redis":
@@ -201,7 +209,7 @@ if __name__ == '__main__':
     else:
         sys.exit(1)
     
-    print(f'''Running with configuration\n\n{REGIONS = }\n{NUM_SELECT_FROM_DB = }\n{NUM_RANDOM = }\n{CACHE_MODE = }\n\n{NUM_INSERT_TO_DB = }\n\n\n''')
+    
     load_dotenv(os.path.join(os.path.dirname('./'), '.env'))
     
     rcache = RcacheProfiling()
@@ -233,17 +241,14 @@ if __name__ == '__main__':
             CACHE_MODE = CM
             for ICR in [False, True]:
                 IS_CROSS_REGION = ICR
+                print(f'''Running with configuration {NUM_SELECT_FROM_DB = }, {NUM_RANDOM = }\n{REGIONS = }, {CACHE_MODE = }''')
                 result += rcache.run()
             
-        pd.DataFrame(data=result, columns=["region", "cache_mode", "is_cross_region", "average_read_time", "average_update_time"]).to_csv(f"all_result_{NUM_RANDOM}.csv")
+        pd.DataFrame(data=result, columns=["region", "cache_mode", "is_cross_region", "average_read_time", "average_update_time"]).to_csv(f"./result/{OUTPUT}_{NUM_RANDOM}.csv")
         #  result.append((prefix, CACHE_MODE.name, np.average(read_time), np.average(update_time)))
     else:
-        with cProfile.Profile() as pr:
-            rcache.run()
-        stats = pstats.Stats(pr)
-        stats.sort_stats(pstats.SortKey.TIME)
-        # stats.print_stats()
-        stats.dump_stats(filename="rcache_profiling.prof")
+        print(f'''Running with configuration\n\n{REGIONS = }\n{NUM_SELECT_FROM_DB = }\n{NUM_RANDOM = }\n{CACHE_MODE = }\n\n{NUM_INSERT_TO_DB = }\n\n\n''')
+        rcache.run()
     
     
     
