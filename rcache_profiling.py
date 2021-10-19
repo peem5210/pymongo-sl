@@ -69,6 +69,41 @@ class RcacheProfiling:
     def load_from_db(self, region):
         assert  NUM_SELECT_FROM_DB < 1000000, f"{NUM_SELECT_FROM_DB < 1000000 = }"
         return [(x['_id'], x['region']) for x in list(self.collection_connections.values())[0].find(limit=NUM_SELECT_FROM_DB, skip=random.randint(0, 1000000 - NUM_SELECT_FROM_DB), projection=["_id", "region"], filter={"region":region})] 
+    
+    def run_read_with_hit_percentage(self, interval, region, connection_str):
+        CACHE_MODE = CacheMode.REDIS
+        for r in REGIONS:
+            if r != region:
+                continue
+            self.region_object_list[r] = self.load_from_db(r)    
+            self.populate_cache(self.region_object_list[r])
+
+        connection = self.collection_connections[connection_str]
+        result: list= [(float, float, int, int)]
+        for percent in list(range(0, 100+interval ,interval)) + [97, 99]:
+            print(f"Testing with cache hit {percent = }")
+            read_time = []
+            summary = {True:0, False:0}
+            for random_iter in tqdm(range(NUM_RANDOM)):
+                is_hit = random_iter/NUM_RANDOM < percent/100
+                object_id, region = self.region_object_list[region][random.randint(0, NUM_SELECT_FROM_DB-1)]
+                s1 = time.perf_counter()
+                summary[is_hit]+=1
+                if CACHE_MODE != CacheMode.IDEAL:
+                    cached_region = self.get_cache(object_id)
+                    if is_hit:
+                        self.read_object(connection, object_id, region=cached_region)
+                    else:
+                        self.read_object(connection, object_id)
+                else:
+                    self.read_object(connection, object_id, region=region)
+                s2 = time.perf_counter()
+                read_time.append(s2-s1)
+            read_avg = sum(read_time)/len(read_time) 
+            result.append((percent, read_avg*1000, summary[True], summary[False]))
+            print(summary)
+            print(f"result:\nread avg ({connection_str})[{IS_CROSS_REGION = }]:{read_avg}\n")
+        pd.DataFrame(result, columns=['hit_percentage', 'average_read_time_ms', 'num_hit', 'num_miss']).to_csv(f"./result/{OUTPUT}_hit_tests.csv")
             
     def run(self):
         #Load object to memory
@@ -145,9 +180,9 @@ class RcacheProfiling:
     def read_object(self, connection: Collection, _id: ObjectId, region: str = None):
         if region is not None:
             if type(region) == bytes: 
-                return connection.find_one({"_id":_id, "region":region.decode("utf-8")})  
-            else:
-                return connection.find_one({"_id":_id, "region":region})  
+                region = region.decode("utf-8")
+            assert type(region) == str, f"type of region should be string: {type(region)}"
+            return connection.find_one({"_id":_id, "region":region})  
         return connection.find_one({"_id":_id})    
     
     def update_object(self, connection: Collection, _id: ObjectId, update: dict, region: str = None):
@@ -191,8 +226,10 @@ if __name__ == '__main__':
     parser.add_argument('--all-test', '-a',action='store_true')
     parser.add_argument('--output', '-o',default='all_result')
     parser.add_argument('--connection', default='SGP_1,ORE_1') 
+    parser.add_argument('--hit-tests', '-ht', action='store_true')
     args = parser.parse_args(sys.argv[1:])
     print(args)
+    HIT_TESTS = args.hit_tests
     MONGODB_HOST_PREFIXES = args.connection.split(',')
     NUM_SELECT_FROM_DB = int(args.select)
     NUM_RANDOM = int(args.random_iter)
@@ -214,25 +251,6 @@ if __name__ == '__main__':
     
     rcache = RcacheProfiling()
 
-    # s1 = time.time()
-    # print([rcache.collection.find_one({"region":"SGP"})])
-    # s2 = time.time()
-    # print([rcache.collection.find_one({"region":"ORE"})])
-    # s3 = time.time()
-    # print(f"query region SGP: {s2-s1} \nquery region ORE: {s3-s2}")
-    # s1 = time.time()
-    # print([rcache.collection.find_one({"_id":ObjectId("6162d48cd20b9f4b16d39ff4")})])
-    # s2 = time.time()
-    # print([rcache.collection.find_one({"_id":ObjectId("6162d410d20b9f4b16d39c59")})])
-    # s3 = time.time()
-    # print(f"query _id SGP: {s2-s1} \nquery _id ORE: {s3-s2}")
-    # s1 = time.time()
-    # print([rcache.collection.find_one({"_id":ObjectId("6162d48cd20b9f4b16d39ff4"), "region":"SGP"})])
-    # s2 = time.time()
-    # print([rcache.collection.find_one({"_id":ObjectId("6162d410d20b9f4b16d39c59"), "region":"ORE"})])
-    # s3 = time.time()
-    # print(f"query _id, region SGP: {s2-s1} \nquery _id, region ORE: {s3-s2}")
-
     if args.populate:
         populate_mongo(rcache)
     elif args.all_test:
@@ -246,6 +264,8 @@ if __name__ == '__main__':
             
         pd.DataFrame(data=result, columns=["region", "cache_mode", "is_cross_region", "average_read_time", "average_update_time"]).to_csv(f"./result/{OUTPUT}_{NUM_RANDOM}.csv")
         #  result.append((prefix, CACHE_MODE.name, np.average(read_time), np.average(update_time)))
+    elif args.hit_tests:
+        rcache.run_read_with_hit_percentage(5, "SGP", "SGP_1")    
     else:
         print(f'''Running with configuration\n\n{REGIONS = }\n{NUM_SELECT_FROM_DB = }\n{NUM_RANDOM = }\n{CACHE_MODE = }\n\n{NUM_INSERT_TO_DB = }\n\n\n''')
         rcache.run()
