@@ -5,10 +5,14 @@ import random
 
 import argparse
 import pandas as pd
-from pymongo.collection import Collection
 from redis import Redis
 from dotenv import load_dotenv
-from pymongo import MongoClient
+
+# from pymongo import MongoClient
+# from pymongo.collection import Collection
+from pymongo_sl.mongo_client import MongoClientSL as MongoClient
+from pymongo_sl.collection import CollectionSL as Collection
+
 from bson.objectid import ObjectId
 from tqdm import tqdm
 from enum import Enum, auto
@@ -79,7 +83,7 @@ class RcacheProfiling:
             self.populate_cache(self.region_object_list[r])
 
         connection = self.collection_connections[connection_str]
-        result: list= [(float, float, int, int)]
+        result: list[(float, float, int, int)]= []
         for percent in list(range(0, 100+interval ,interval)) + [97, 99]:
             print(f"Testing with cache hit {percent = }")
             read_time = []
