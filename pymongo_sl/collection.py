@@ -1,13 +1,9 @@
 from pymongo.collection import *
-from redis import Redis
 from pymongo_sl.cache_client import CacheClient
-
 from pymongo_sl.errors import MissingArgsError
+from pymongo_sl.common import *
 
-_id = "_id"
-_filter = "filter"
-_region = "region"
-_project = "project"
+
 class CollectionSL(Collection):
     """pymongo Collection for SnapLogic
      This will be transparent to user and work just like the native ~pymongo.collection.Collection
