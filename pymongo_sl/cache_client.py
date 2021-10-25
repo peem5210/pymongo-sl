@@ -10,7 +10,7 @@ class BaseCacheClient:
         pass
 
 class CacheClient(BaseCacheClient):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs):
         self.__redis_client: Redis = None
         
         if "client" in kwargs:

@@ -1,6 +1,5 @@
 from pymongo.database import *
 
-
 from pymongo_sl.collection import CollectionSL
 from pymongo_sl.errors import MissingArgsError
 

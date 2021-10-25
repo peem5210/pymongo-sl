@@ -64,10 +64,8 @@ if __name__ == '__main__':
         )
     
     temp = [x for x in mongo_nt.mongo.mongo.find(filter={"region":"SGP", "read":False}, limit=5)]
-    
-    
+        
     result_nt, timing_nt = tests(mongo_nt, temp)
     result_sl, timing_sl = tests(mongo_sl, temp)
-    
 
     validate_and_measure(result_nt, timing_nt, result_sl, timing_sl)
