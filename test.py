@@ -10,7 +10,6 @@ load_env()
 redis = Redis(host=ENV("REDIS_HOST"), port=ENV("REDIS_PORT"), password=ENV("REDIS_PASSWORD"))
 
 
-
 def tests(mongo: MongoClient, temp):
     global redis
 

@@ -4,7 +4,7 @@ services:
   #   build: .
   #   container_name: "python3.9_rcache"
   #   volumes:
-  #     - ./result:/result
+  #     - ./reseach/result:/result
   # mongo:
   #   image: bitnami/mongodb:5.0
   #   volumes:
