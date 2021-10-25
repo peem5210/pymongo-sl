@@ -1,7 +1,8 @@
 from pymongo.collection import *
+
 from pymongo_sl.cache_client import CacheClient
 from pymongo_sl.errors import MissingArgsError
-from pymongo_sl.common import *
+from pymongo_sl.keywords import KW
 
 
 class CollectionSL(Collection):
@@ -30,26 +31,38 @@ class CollectionSL(Collection):
         
         return self.__collection.find(*args, **kwargs)
     
-    def find_one(self, *args, **kwargs):
-        document = None
-        filter = kwargs[_filter]
-        if _id in filter and _region not in filter:
-            region = self.__cache_client.get_string(filter[_id])
-            if region:
-                kwargs[_filter][_region] = region
-                document = self.__collection.find_one(*args, **kwargs)
-            else: #If _id is not in cache 
-                document = self.__collection.find_one(*args, **kwargs)
-                if document is not None:
-                    if _project in kwargs:
-                        "TODO: Add caching logic here"
-                        pass
-                    else:
-                        self.__cache_client.set(document[_id], document[_region])
+    def _find_one_with_region(self, filter=None, projection=None, *args, **kwargs):
+        document = kwargs.pop(KW.document, None)
+        remove_region = False
+        region = self.__cache_client.get(filter[KW._id])
+        if region is not None:
+            filter[KW.region] = region
+            document = self.__collection.find_one(filter=filter, projection=projection, *args, **kwargs)
         else:
-            document = self.__collection.find_one(*args, **kwargs)
+            if isinstance(projection, dict) and projection:
+                if KW.region not in projection:
+                    remove_region = True
+                if next(iter(projection.values())):
+                    projection[KW.region] = True
+            document = self.__collection.find_one(filter=filter, projection=projection, *args, **kwargs)
+            if document is not None:
+                if KW._id in document and KW.region in document:
+                    self.__cache_client.set(document[KW._id], document[KW.region])
+                else:
+                    pass
+        if remove_region:
+            document.pop(KW.region)
         return document
     
+    def find_one(self, filter, *args, **kwargs):
+        document = None        
+        if KW._id in filter and KW.region not in filter and "TODO: Implement the schema validation that ensure the region field":
+            kwargs[KW.document] = None
+            document = self._find_one_with_region(filter, *args, **kwargs)
+        else:
+            document = self.__collection.find_one(filter, *args, **kwargs)
+        return document
+
     def update(self, *args, **kwargs):
         "TODO: Add caching logic here"
 

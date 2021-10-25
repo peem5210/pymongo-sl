@@ -17,7 +17,6 @@ from bson.objectid import ObjectId
 from tqdm import tqdm
 from enum import Enum, auto
 
-from rcache.rcache import Rcache
 from util.func import *
 class CacheMode(Enum):
     LOCAL = auto()
