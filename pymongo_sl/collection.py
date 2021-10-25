@@ -2,6 +2,7 @@ from pymongo.collection import *
 
 from pymongo_sl.cache_client import CacheClient
 from pymongo_sl.errors import MissingArgsError
+from pymongo_sl.common import override
 from pymongo_sl.keywords import KW
 
 
@@ -10,6 +11,8 @@ class CollectionSL(Collection):
      This will be transparent to user and work just like the native ~pymongo.collection.Collection
      with extended caching logic before delegating the actual query to the native class.
     """
+    
+    @override
     def __init__(self, *args, **kwargs):       
         self.__cache_client: CacheClient = kwargs.pop("cache_client", None)
         if self.__cache_client is None: 
@@ -17,6 +20,7 @@ class CollectionSL(Collection):
         self.__collection = Collection(*args, **kwargs)
         self.__dict__.update(self.__collection.__dict__)
 
+    @override
     def __getitem__(self, name):
         return CollectionSL(self.__database,
                           _UJOIN % (self.__name, name),
@@ -25,7 +29,7 @@ class CollectionSL(Collection):
                           self.read_preference,
                           self.write_concern,
                           self.read_concern)
-    
+    @override
     def find(self, *args, **kwargs):
         "TODO: Add caching logic here"
         
@@ -54,6 +58,7 @@ class CollectionSL(Collection):
             document.pop(KW.region)
         return document
     
+    @override
     def find_one(self, filter, *args, **kwargs):
         document = None        
         if KW._id in filter and KW.region not in filter and "TODO: Implement the schema validation that ensure the region field":
@@ -62,17 +67,20 @@ class CollectionSL(Collection):
         else:
             document = self.__collection.find_one(filter, *args, **kwargs)
         return document
-
+    
+    @override
     def update(self, *args, **kwargs):
         "TODO: Add caching logic here"
 
         return self.__collection.update(*args, **kwargs)
     
+    @override
     def update_many(self, *args, **kwargs):
         "TODO: Add caching logic here"
 
         return self.__collection.update_many(*args, **kwargs)
-        
+    
+    @override  
     def update_one(self, *args, **kwargs):
         "TODO: Add caching logic here"
 
