@@ -17,7 +17,7 @@ class CacheClient(BaseCacheClient):
             assert len(kwargs) == 1, "Only redis_client is needed for redis initialization"
             self.__redis_client = kwargs.pop("client")
         else:
-             self.__redis_client = self._redis_init(**kwargs)
+            self.__redis_client = self._redis_init(**kwargs)
     
         if not isinstance(self.__redis_client, Redis):
             raise ValueError("redis_client should be instance of ~redis.Redis class")

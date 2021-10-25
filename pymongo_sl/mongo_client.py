@@ -16,11 +16,11 @@ class MongoClientSL(MongoClient):
     """
     def __init__(self, *args, **kwargs):
         redis_kwargs = dict([(kw.split(REDIS_PREFIX)[-1], kwargs.pop(kw)) for kw in kwargs.copy() if kw.startswith(REDIS_PREFIX)])   
+        self.__cache_client = CacheClient(**redis_kwargs)
         self.__client = MongoClient(*args, **kwargs)
         self.__dict__.update(self.__client.__dict__)
-        self.__cache_client = CacheClient(**redis_kwargs)
     
-    def _get_cache_client(self):
+    def get_cache_client(self):
         return self.__cache_client
     
     def __getitem__(self, name):
