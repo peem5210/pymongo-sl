@@ -1,10 +1,10 @@
 import os
 import dotenv 
 
-def ENV(variable:str, to_int = False):
-    if to_int:
-        return int(os.environ.get(variable))
-    result = os.environ.get(variable)
+def ENV(variable:str, to_int:bool = False):
+    result: str = os.environ.get(variable, "")
+    if to_int and isinstance(result, str):
+        return int(result)
     assert result is not None, f"Environment variable '{variable}' not exist"
     return result
 

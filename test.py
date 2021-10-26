@@ -1,11 +1,11 @@
 from typing import Any
 from pymongo_sl.mongo_client import MongoClientSL 
-from pymongo import MongoClient 
-from redis import Redis
-from tqdm import tqdm
-from util.func import *
+from pymongo import MongoClient # type: ignore
+from redis import Redis # type: ignore
+from tqdm import tqdm # type: ignore
+from util.func import ENV, load_env
 import time
-import numpy as np
+import numpy as np # type: ignore
 
 load_env()
 redis = Redis(host=ENV("REDIS_HOST"), port=ENV("REDIS_PORT"), password=ENV("REDIS_PASSWORD"))
@@ -18,8 +18,8 @@ def tests(mongo_client: MongoClient, documents: list[dict[str, Any]]):
     collection = mongo_client[ENV("MONGODB_DATABASE")][ENV("MONGODB_COLLECTION")]    
     collection_ = mongo_client.mongo.mongo
     
-    timing = []
-    result_list = []
+    timing: list[float]= []
+    result_list = list[dict[str, Any]]
     for document in tqdm(documents):
         timing_and_append_result(timing, result_list, collection.find_one, ({"_id":document["_id"]}, {"_id":True, "read":True, "region":True}))
         timing_and_append_result(timing, result_list, collection.find_one, filter = {"_id":document["_id"]}, projection = {"_id":True, "read":True, "region":True})

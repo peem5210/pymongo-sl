@@ -1,4 +1,5 @@
-from pymongo.mongo_client import *
+from pymongo import MongoClient
+from pymongo.mongo_client import * 
 
 from pymongo_sl.cache_client import CacheClient
 from pymongo_sl.database import DatabaseSL
