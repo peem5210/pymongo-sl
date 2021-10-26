@@ -19,9 +19,9 @@ def tests(mongo_client: MongoClient, documents: list[dict[str, Any]]):
     collection_ = mongo_client.mongo.mongo
     
     timing: list[float]= []
-    result_list = list[dict[str, Any]]
+    result_list: list[dict[str, Any]] = []
     for document in tqdm(documents):
-        timing_and_append_result(timing, result_list, collection.find_one, ({"_id":document["_id"]}, {"_id":True, "read":True, "region":True}))
+        timing_and_append_result(timing, result_list, collection.find_one, {"_id":document["_id"]}, {"_id":True, "read":True, "region":True})
         timing_and_append_result(timing, result_list, collection.find_one, filter = {"_id":document["_id"]}, projection = {"_id":True, "read":True, "region":True})
         timing_and_append_result(timing, result_list, collection.find_one, {"_id":document["_id"]}, projection = {"_id":True, "read":True, "region":True})
         timing_and_append_result(timing, result_list, collection.find_one, {"_id":document["_id"]}, projection = {"_id":True, "read":True})
@@ -34,6 +34,7 @@ def tests(mongo_client: MongoClient, documents: list[dict[str, Any]]):
         timing_and_append_result(timing, result_list, collection_.find_one, filter = {"_id":document["_id"]}, projection = [])
         timing_and_append_result(timing, result_list, collection_.find_one, filter = {"_id":document["_id"]}, projection = {"_id":False})
         timing_and_append_result(timing, result_list, collection_.find_one, {"_id":document["_id"]})
+        timing_and_append_result(timing, result_list, collection_.find_one)
         
     
     #clear cache

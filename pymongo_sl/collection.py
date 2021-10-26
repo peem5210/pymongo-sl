@@ -62,7 +62,7 @@ class CollectionSL(Collection):
     @override
     def find_one(self, filter=None, *args, **kwargs):
         document = None        
-        if KW._id in filter and KW.region not in filter and "TODO: Implement the schema validation that ensure the region field":
+        if filter and KW._id in filter and KW.region not in filter and "TODO: Implement the schema validation that ensure the region field":
             kwargs[KW.document] = None
             document = self._find_one_with_region(filter, *args, **kwargs)
         else:
