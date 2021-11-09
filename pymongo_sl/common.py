@@ -1,4 +1,4 @@
 def override(function):
-    """a decorator that indicate the function overriding of native pymongo classes
+    """An indicator decorator for those methods overriding native pymongo methods.
     """
     return function

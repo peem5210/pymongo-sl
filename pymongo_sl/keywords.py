@@ -1,5 +1,5 @@
 class KW:
-    _id = "_id"
+    id = "_id"
     filter = "filter"
     region = "region"
     projection = "projection"
