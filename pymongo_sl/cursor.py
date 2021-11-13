@@ -14,7 +14,7 @@ class CursorSL(Cursor):
     @override
     def __init__(self, *args, **kwargs):
         self.__cache_client = kwargs.pop("cache_client", None)
-        self.__forced_projecting = kwargs.pop("forced_projecting", False)
+        self.__forced_projection = kwargs.pop("forced_projection", False)
         self.__no_cache = kwargs.pop("no_cache", False)
         if self.__cache_client is None:
             raise MissingArgsError("cache_client is not provided")
@@ -28,7 +28,7 @@ class CursorSL(Cursor):
                 if KW.region in result:
                     if KW.id in result:
                         self.__cache_client.set(result[KW.id], result[KW.region])
-                    if self.__forced_projecting:
+                    if self.__forced_projection:
                         result.pop(KW.region)
         return result
     __next__ = next

@@ -10,13 +10,13 @@ import time
 import numpy as np  # type: ignore
 
 load_env()
-redis = Redis(host=ENV("REDIS_HOST"), port=ENV("REDIS_PORT"), password=ENV("REDIS_PASSWORD"))
+# redis = Redis(host=ENV("REDIS_HOST"), port=ENV("REDIS_PORT"), password=ENV("REDIS_PASSWORD"))
 
 
 def tests(mongo_nt, mongo_sl, documents):
-    global redis
-    for x in documents:
-        redis.delete(str(x["_id"]))
+    # global redis
+    # for x in documents:
+    #     redis.delete(str(x["_id"]))
 
     collection_nt = mongo_nt[ENV("MONGODB_DATABASE")][ENV("MONGODB_COLLECTION")]
     collection_sl = mongo_sl[ENV("MONGODB_DATABASE")][ENV("MONGODB_COLLECTION")]

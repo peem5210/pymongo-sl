@@ -46,7 +46,7 @@ class CollectionSL(Collection):
             last is boolean indicating whether field `region` was forced
             to project or not
         """
-        forced_projecting = False
+        forced_projection = False
         if filter and KW.region not in filter:
             region = self.__cache_client.get(filter[KW.id])
             if region is not None:
@@ -54,11 +54,11 @@ class CollectionSL(Collection):
             else:
                 if isinstance(projection, dict) and projection:
                     if KW.region not in projection and next(iter(projection.values())):
-                        forced_projecting = True
+                        forced_projection = True
                         projection[KW.region] = True
         return {KW.filter: filter,
                 KW.projection: projection,
-                KW.forced_projecting: forced_projecting}
+                KW.forced_projection: forced_projection}
 
     @override
     def find(self, filter=None, projection=None, *args, **kwargs):
@@ -76,7 +76,7 @@ class CollectionSL(Collection):
                 self.__cache_client.set(document[KW.id], document[KW.region])
             else:
                 pass
-        if updated_kwargs[KW.forced_projecting]:
+        if updated_kwargs[KW.forced_projection]:
             document.pop(KW.region)
         return document
 
@@ -84,6 +84,8 @@ class CollectionSL(Collection):
     def find_one(self, filter=None, *args, **kwargs):
         if filter and KW.id in filter and KW.region not in filter \
                 and """TODO: Implement the schema validation that ensure the region field
+                        of the queried collection, so we won't have a miss force projection to
+                        collection that doesn't have `region` field
                     """:
             document = self._find_one_with_region(filter, *args, **kwargs)
         else:

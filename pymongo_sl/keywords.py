@@ -4,4 +4,4 @@ class KW:
     region = "region"
     projection = "projection"
     document = "document"
-    forced_projecting = "forced_projecting"
+    forced_projection = "forced_projection"
