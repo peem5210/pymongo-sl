@@ -8,7 +8,7 @@ from pymongo_sl.common import override
 
 class DatabaseSL(Database):
     """pymongo Database for SnapLogic
-     This will be transparent to user and work just like the native ~pymongo.database.Database
+     This will be transparent to user and work just like the native :class:`~pymongo.database.Database`
     """
 
     @override

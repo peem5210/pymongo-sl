@@ -1,13 +1,13 @@
-from typing import Any
+import time
+import numpy as np  # type: ignore
+from tqdm import tqdm  # type: ignore
+from redis import Redis  # type: ignore
+from pymongo import MongoClient  # type: ignore
 
 from pymongo_sl.mongo_client import MongoClientSL
 from pymongo_sl.cache_client import LocalCacheClient, CacheClient
-from pymongo import MongoClient  # type: ignore
-from redis import Redis  # type: ignore
-from tqdm import tqdm  # type: ignore
 from util.func import ENV, load_env
-import time
-import numpy as np  # type: ignore
+
 
 load_env()
 # redis = Redis(host=ENV("REDIS_HOST"), port=ENV("REDIS_PORT"), password=ENV("REDIS_PASSWORD"))

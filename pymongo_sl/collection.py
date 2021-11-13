@@ -10,7 +10,7 @@ from pymongo_sl.keywords import KW
 
 class CollectionSL(Collection):
     """pymongo Collection for SnapLogic
-     This will be transparent to user and work just like the native ~pymongo.collection.Collection
+     This will be transparent to user and work just like the native :class:`~pymongo.collection.Collection`
      with extended caching logic before delegating the actual query to the native class.
     """
 
