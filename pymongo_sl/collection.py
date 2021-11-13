@@ -53,28 +53,30 @@ class CollectionSL(Collection):
                 filter[KW.region] = region
             else:
                 if isinstance(projection, dict) and projection:
-                    is_inclusion_projection = next(iter(projection.values()))
-                    if KW.region not in projection and is_inclusion_projection:
+                    if KW.region not in projection and next(iter(projection.values())):
                         forced_projecting = True
                         projection[KW.region] = True
-        return filter, projection, forced_projecting
+        return {KW.filter: filter,
+                KW.projection: projection,
+                KW.forced_projecting: forced_projecting}
 
     @override
     def find(self, filter=None, projection=None, *args, **kwargs):
-        filter, projection, forced_projecting = self.ensure_region(filter, projection)
-        return CursorSL(self, filter=filter, projection=projection,
-                        cache_client=self.__cache_client, forced_projecting=forced_projecting,
-                        *args, **kwargs)
+        updated_kwargs = self.ensure_region(filter, projection)
+        kwargs.update(updated_kwargs)
+        return CursorSL(self, *args, cache_client=self.__cache_client, **kwargs)
 
     def _find_one_with_region(self, filter=None, projection=None, *args, **kwargs):
-        filter, projection, forced_projecting = self.ensure_region(filter, projection)
-        document = self.__collection.find_one(filter=filter, projection=projection, *args, **kwargs)
+        updated_kwargs = self.ensure_region(filter, projection)
+        document = self.__collection.find_one(filter=updated_kwargs[KW.filter],
+                                              projection=updated_kwargs[KW.projection],
+                                              *args, **kwargs)
         if document is not None:
             if KW.id in document and KW.region in document:
                 self.__cache_client.set(document[KW.id], document[KW.region])
             else:
                 pass
-        if forced_projecting:
+        if updated_kwargs[KW.forced_projecting]:
             document.pop(KW.region)
         return document
 

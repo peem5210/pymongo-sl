@@ -24,7 +24,11 @@ class CursorSL(Cursor):
     @override
     def next(self):
         result = self.__cursor.next()
-        if (not self.__no_cache) and self.__forced_projecting and (KW.region in result):
-            result.pop(KW.region)
+        if not self.__no_cache:
+                if KW.region in result:
+                    if KW.id in result:
+                        self.__cache_client.set(result[KW.id], result[KW.region])
+                    if self.__forced_projecting:
+                        result.pop(KW.region)
         return result
     __next__ = next
