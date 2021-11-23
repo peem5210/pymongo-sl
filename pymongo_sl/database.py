@@ -1,4 +1,3 @@
-from pymongo.database import *
 from pymongo.database import Database
 
 from pymongo_sl.collection import CollectionSL

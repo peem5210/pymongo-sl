@@ -1,4 +1,3 @@
-from pymongo.cursor import *
 from pymongo.cursor import Cursor
 
 from pymongo_sl.common import override

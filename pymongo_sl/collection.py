@@ -1,8 +1,6 @@
-from pymongo.collection import *
 from pymongo.collection import Collection, _UJOIN
 
 from pymongo_sl.cursor import CursorSL
-from pymongo_sl.cache_client import CacheClient
 from pymongo_sl.errors import MissingArgsError
 from pymongo_sl.common import override
 from pymongo_sl.keywords import KW

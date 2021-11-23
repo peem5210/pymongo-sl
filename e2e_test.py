@@ -5,8 +5,8 @@ from redis import Redis  # type: ignore
 from pymongo import MongoClient  # type: ignore
 
 from pymongo_sl.mongo_client import MongoClientSL
-from pymongo_sl.cache_client import LocalCacheClient, CacheClient
-from util.func import ENV, load_env
+from pymongo_sl.cache_client import LocalCacheClient
+from util.func import env, load_env
 
 
 load_env()
@@ -18,8 +18,8 @@ def tests(mongo_nt, mongo_sl, documents):
     # for x in documents:
     #     redis.delete(str(x["_id"]))
 
-    collection_nt = mongo_nt[ENV("MONGODB_DATABASE")][ENV("MONGODB_COLLECTION")]
-    collection_sl = mongo_sl[ENV("MONGODB_DATABASE")][ENV("MONGODB_COLLECTION")]
+    collection_nt = mongo_nt[env("MONGODB_DATABASE")][env("MONGODB_COLLECTION")]
+    collection_sl = mongo_sl[env("MONGODB_DATABASE")][env("MONGODB_COLLECTION")]
 
     timing = []
     for document in tqdm(documents):
@@ -73,18 +73,18 @@ def measure(timing_nt, timing_sl):
 
 if __name__ == '__main__':
     mongo_nt = MongoClient(
-        host=ENV("MONGODB_HOST_SGP_1"),
-        port=ENV("MONGODB_PORT", True),
-        username=ENV("MONGODB_USERNAME"),
-        password=ENV("MONGODB_PASSWORD"),
+        host=env("MONGODB_HOST_SGP_1"),
+        port=env("MONGODB_PORT", True),
+        username=env("MONGODB_USERNAME"),
+        password=env("MONGODB_PASSWORD"),
     )
     cache_client = LocalCacheClient()
     # cache_client = CacheClient(client=redis)
     mongo_sl = MongoClientSL(
-        host=ENV("MONGODB_HOST_SGP_1"),
-        port=ENV("MONGODB_PORT", True),
-        username=ENV("MONGODB_USERNAME"),
-        password=ENV("MONGODB_PASSWORD"),
+        host=env("MONGODB_HOST_SGP_1"),
+        port=env("MONGODB_PORT", True),
+        username=env("MONGODB_USERNAME"),
+        password=env("MONGODB_PASSWORD"),
         cache_client=cache_client
     )
 
