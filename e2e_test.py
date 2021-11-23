@@ -1,10 +1,9 @@
 import time
-import numpy as np  # type: ignore
-from tqdm import tqdm  # type: ignore
-from redis import Redis  # type: ignore
-from pymongo import MongoClient  # type: ignore
+import numpy as np
+from tqdm import tqdm
+from pymongo import MongoClient
 
-from pymongo_sl.mongo_client import MongoClientSL
+from pymongo_sl import MongoClientSL
 from pymongo_sl.cache_client import LocalCacheClient
 from util.func import env, load_env
 
