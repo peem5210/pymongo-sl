@@ -11,8 +11,8 @@ setup(
     author_email="passawit.y@gmail.com ",
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
-    package_dir={"": "pymongo_sl"},
-    packages=find_packages(where='pymongo_sl'),
+    package_dir={"": "src"},
+    packages=find_packages(where='src'),
     project_url="https://github.com/peem5210/pymongo-sl",
     keywords=['python', 'first package'],
     classifiers=[

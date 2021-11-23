@@ -9,8 +9,8 @@ from dotenv import load_dotenv
 
 # from pymongo import MongoClient
 # from pymongo.collection import Collection
-from pymongo_sl.mongo_client import MongoClientSL as MongoClient
-from pymongo_sl.collection import CollectionSL as Collection
+from src.pymongo_sl import MongoClientSL as MongoClient
+from src.pymongo_sl import CollectionSL as Collection
 
 from bson.objectid import ObjectId
 from tqdm import tqdm
