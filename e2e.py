@@ -8,15 +8,10 @@ from pymongo_sl.cache_client import LocalCacheClient
 from util.func import env, load_env
 
 
-load_env()
-# redis = Redis(host=ENV("REDIS_HOST"), port=ENV("REDIS_PORT"), password=ENV("REDIS_PASSWORD"))
+load_env(name='.dev')
 
 
-def tests(mongo_nt, mongo_sl, documents):
-    # global redis
-    # for x in documents:
-    #     redis.delete(str(x["_id"]))
-
+def run(mongo_nt, mongo_sl, documents):
     collection_nt = mongo_nt[env("MONGODB_DATABASE")][env("MONGODB_COLLECTION")]
     collection_sl = mongo_sl[env("MONGODB_DATABASE")][env("MONGODB_COLLECTION")]
 
@@ -71,6 +66,13 @@ def measure(timing_nt, timing_sl):
 
 
 if __name__ == '__main__':
+    # TODO: before executing the script VVV
+    """Prerequisites:
+        1. Setup .dev.env
+        2. Please run local MongoDB via ./docker-compose.yaml
+        3. Please populate MongoDB with `python3 research/rcache_profiling.py --populate`
+    """
+
     mongo_nt = MongoClient(
         host=env("MONGODB_HOST_SGP_1"),
         port=env("MONGODB_PORT", True),
@@ -78,7 +80,6 @@ if __name__ == '__main__':
         password=env("MONGODB_PASSWORD"),
     )
     cache_client = LocalCacheClient()
-    # cache_client = CacheClient(client=redis)
     mongo_sl = MongoClientSL(
         host=env("MONGODB_HOST_SGP_1"),
         port=env("MONGODB_PORT", True),
@@ -88,5 +89,5 @@ if __name__ == '__main__':
     )
 
     documents = [x for x in mongo_nt.mongo.mongo.find(filter={"region": "SGP", "read": False}, limit=2)]
-    timing_nt, timing_sl = tests(mongo_nt, mongo_sl, documents)
+    timing_nt, timing_sl = run(mongo_nt, mongo_sl, documents)
     measure(timing_nt, timing_sl)

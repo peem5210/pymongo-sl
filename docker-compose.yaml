@@ -1,21 +1,21 @@
-version: "3.8"
+version: '3.8'
 services:
+  mongo:
+    image: bitnami/mongodb:5.0
+    volumes:
+      - ./initdb/:/docker-entrypoint-initdb.d/:ro
+    env_file:
+      - .dev.env
+    ports:
+      - 27017:27017
+#  redis:
+#    image: bitnami/redis
+#    env_file:
+#      - .dev.env
+#    ports:
+#      - 6379:6379
   # rcache:
   #   build: .
   #   container_name: "python3.9_rcache"
   #   volumes:
   #     - ./reseach/result:/result
-  # mongo:
-  #   image: bitnami/mongodb:5.0
-  #   volumes:
-  #     - ./initdb/:/docker-entrypoint-initdb.d/:ro
-  #   env_file:
-  #     - .env
-  #   ports:
-  #     - 27017:27017
-  redis:
-    image: bitnami/redis
-    env_file:
-      - .env
-    ports:
-      - 6379:6379

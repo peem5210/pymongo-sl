@@ -1,5 +1,5 @@
 
-class TestInit:
+class TestImport:
     def test_import(self):
         from pymongo_sl import MongoClientSL
         from pymongo_sl.cache_client import (CacheClient, LocalCacheClient, BaseCacheClient)
