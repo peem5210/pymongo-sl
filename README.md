@@ -3,6 +3,11 @@ pymongo-sl = pymongo SnapLogic Extended
 
 An extended version of pymongo to have caching logic before delegating the actual query to the native pymongo library
 
+### TODOs
+- [ ] Create JIRA or something similar
+- [ ] Add full-fledged unit tests for all functions
+- [ ] CI/CD 
+
 ## For Contributors
 
 ### Installation for development
@@ -18,7 +23,4 @@ Prerequisites
 4. Run `python3 e2e.py`
 
 
-### TODOs
-- [ ] Create JIRA or something similar
-- [ ] Add full-fledged unit tests for all functions
-- [ ] Somethings else..
+
