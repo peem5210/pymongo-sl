@@ -18,3 +18,7 @@ Prerequisites
 4. python3 e2e.py
 
 
+### TODOs
+- [ ] Create JIRA or something similar
+- [ ] Add full-fledged unit tests for all functions
+- [ ] Somethings else..
