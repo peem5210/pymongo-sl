@@ -14,8 +14,8 @@ Use `pip3 install -U pytest` to install pytest and run tests with `pytest ./test
 Prerequisites
 1. First install the library 
 2. Run a local MongoDB with no password, security, settings whatsoever using this [./docker-compose.yaml](https://github.com/peem5210/pymongo-sl/blob/master/docker-compose.yaml)
-3. At project's root directory, populate the MongoDB data with this command `python3 rcache_profiling.py --populate`
-4. python3 e2e.py
+3. Populate the MongoDB data with this command `python3 rcache_profiling.py --populate`
+4. Run `python3 e2e.py`
 
 
 ### TODOs
