@@ -20,7 +20,8 @@ Prerequisites
 1. First install the library 
 2. Run a local MongoDB with no password, security, settings whatsoever using this [./docker-compose.yaml](https://github.com/peem5210/pymongo-sl/blob/master/docker-compose.yaml)
 3. Populate the MongoDB data with this command `python3 rcache_profiling.py --populate`
-4. Run `python3 e2e.py`
+
+Run end-to-end testing with `python3 e2e.py`
 
 
 
