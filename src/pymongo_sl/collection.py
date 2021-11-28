@@ -45,7 +45,8 @@ class CollectionSL(Collection):
             to project or not
         """
         forced_projection = False
-        if filter and KW.region not in filter:
+        if filter and KW.region not in filter and KW.id in filter \
+                and """TODO: a validation to ensure that the '_id' is actually not an expression'""":
             region = self.__cache_client.get(filter[KW.id])
             if region is not None:
                 filter[KW.region] = region
@@ -97,10 +98,11 @@ class CollectionSL(Collection):
         return self.__collection.update(*args, **kwargs)
 
     @override
-    def update_many(self, *args, **kwargs):
+    def update_many(self, filter, update, *args, **kwargs):
         """TODO: Add caching logic here"""
-
-        return self.__collection.update_many(*args, **kwargs)
+        updated_kwargs = self.ensure_region(filter, [])
+        updated_kwargs.pop(KW.projection)
+        return self.__collection.update_many(updated_kwargs[KW.filter], update, *args, **kwargs)
 
     @override
     def update_one(self, *args, **kwargs):

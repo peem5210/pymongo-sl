@@ -222,7 +222,7 @@ class RcacheProfiling:
 
 def populate_mongo_task(rcache: RcacheProfiling):
     rcache.collection_connections["SGP_1"].insert_many(
-        [{"region": REGIONS[random.randint(0, len(REGIONS) - 1)], "read": False} for _ in
+        [{"region": REGIONS[random.randint(0, len(REGIONS) - 1)], "read": False, "group":random.randint(0, 10)} for _ in
          range(NUM_INSERT_TO_DB // 10)], ordered=False)
 
 

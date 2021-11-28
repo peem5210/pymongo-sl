@@ -47,6 +47,8 @@ def run(mongo_nt, mongo_sl, documents):
         validate(timing, collection_nt.find_one, collection_sl.find_one, {"_id": document["_id"]})
         validate(timing, collection_nt.find_one, collection_sl.find_one)
 
+    validate_update(timing, collection_nt.update_many, collection_sl.update_many, filter={"group": 2}, update={'$set': {"read": True}})
+
     return [x for x, _ in timing], [x for _, x in timing]
 
 
@@ -59,6 +61,27 @@ def validate(timing, func_nt, func_sl, *args, **kwargs):
     assert result_nt == result_sl, f"With {args = } and {kwargs = }, the assertion is failed \n " \
                                    f"{result_nt = } should equal to {result_sl = }"
     return timing.append((mid-start, last-mid))
+
+
+def validate_update(timing, func_nt, func_sl, filter, *args, **kwargs):
+    start = time.perf_counter()
+    result_nt = func_nt(filter, *args, **kwargs)
+    mid1 = time.perf_counter()
+
+    # TODO: undo an update at this step, so the update will be applied to the same data on both sl and nt
+
+    mid2 = time.perf_counter()
+    result_sl = func_sl(filter, *args, **kwargs)
+    last = time.perf_counter()
+
+    # TODO: undo an update at this step as well
+
+    # TODO: add a proper validation to make sure that the updated data is the same,
+    #  for now the validation only check for the number of `matched_count` and `modified_count` only
+    print([result_nt.matched_count, result_nt.modified_count], [result_sl.matched_count, result_sl.modified_count])
+    assert [result_nt.matched_count, result_nt.modified_count] == [result_sl.matched_count, result_sl.modified_count], f"With {args = } and {kwargs = }, the assertion is failed \n " \
+                                   f"{result_nt = } should equal to {result_sl = }"
+    return timing.append((mid1-start, last-mid2))
 
 
 def measure(timing_nt, timing_sl):
