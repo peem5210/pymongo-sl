@@ -47,6 +47,18 @@ def run(mongo_nt, mongo_sl, documents):
         validate_document(timing, collection_nt.find_one, collection_sl.find_one, {"_id": document["_id"]})
         validate_document(timing, collection_nt.find_one, collection_sl.find_one)
 
+        validate_document(timing, collection_nt.find_and_modify, collection_sl.find_and_modify, query={"_id": document["_id"]}, fields={"_id": True, "read": True, "region": True}, update={"$set": {"hello": "world"}})
+        validate_document(timing, collection_nt.find_and_modify, collection_sl.find_and_modify, {"_id": document["_id"]}, {"$set": {"hello": "world"}}, fields={"_id": True, "read": True, "region": True})
+        validate_document(timing, collection_nt.find_and_modify, collection_sl.find_and_modify, {"_id": document["_id"]}, {"$set": {"hello": "world"}}, fields={"_id": True, "read": True})
+        validate_document(timing, collection_nt.find_and_modify, collection_sl.find_and_modify, {"_id": document["_id"]}, {"$set": {"hello": "world"}}, fields={})
+        validate_document(timing, collection_nt.find_and_modify, collection_sl.find_and_modify, {"_id": document["_id"]}, {"$set": {"hello": "world"}}, fields=[])
+        validate_document(timing, collection_nt.find_and_modify, collection_sl.find_and_modify, query={"_id": document["_id"]}, fields={"_id": False}, update={"$set": {"hello": "world"}})
+        validate_document(timing, collection_nt.find_and_modify, collection_sl.find_and_modify, query={"_id": document["_id"]}, fields={"_id": True, "read": True, "region": True}, update={"$set": {"hello": "world"}})
+        validate_document(timing, collection_nt.find_and_modify, collection_sl.find_and_modify, query={"_id": document["_id"]}, fields={"_id": True, "read": True}, update={"$set": {"hello": "world"}})
+        validate_document(timing, collection_nt.find_and_modify, collection_sl.find_and_modify, query={"_id": document["_id"]}, fields={}, update={"$set": {"hello": "world"}})
+        validate_document(timing, collection_nt.find_and_modify, collection_sl.find_and_modify, query={"_id": document["_id"]}, fields=[], update={"$set": {"hello": "world"}})
+        validate_document(timing, collection_nt.find_and_modify, collection_sl.find_and_modify, query={"_id": document["_id"]}, fields={"_id": False}, update={"$set": {"hello": "world"}})
+
     validate_result(timing, collection_nt.update_many, collection_sl.update_many, filter={"group": 2}, update={'$set': {"read": True}})
 
     return [x for x, _ in timing], [x for _, x in timing]
