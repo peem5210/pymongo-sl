@@ -17,42 +17,44 @@ def run(mongo_nt, mongo_sl, documents):
 
     timing = []
     for document in tqdm(documents):
-        validate(timing, collection_nt.find, collection_sl.find, {"_id": document["_id"]}, {"_id": True, "read": True, "region": True}, limit=10)
-        validate(timing, collection_nt.find, collection_sl.find, filter={"_id": document["_id"]}, projection={"_id": True, "read": True, "region": True}, limit=10)
-        validate(timing, collection_nt.find, collection_sl.find, {"_id": document["_id"]}, projection={"_id": True, "read": True, "region": True}, limit=10)
-        validate(timing, collection_nt.find, collection_sl.find, {"_id": document["_id"]}, projection={"_id": True, "read": True}, limit=10)
-        validate(timing, collection_nt.find, collection_sl.find, {"_id": document["_id"]}, projection={}, limit=10)
-        validate(timing, collection_nt.find, collection_sl.find, {"_id": document["_id"]}, projection=[], limit=10)
-        validate(timing, collection_nt.find, collection_sl.find, filter={"_id": document["_id"]}, projection={"_id": False}, limit=10)
-        validate(timing, collection_nt.find, collection_sl.find, filter={"_id": document["_id"]}, projection={"_id": True, "read": True, "region": True}, limit=10)
-        validate(timing, collection_nt.find, collection_sl.find, filter={"_id": document["_id"]}, projection={"_id": True, "read": True}, limit=10)
-        validate(timing, collection_nt.find, collection_sl.find, filter={"_id": document["_id"]}, projection={}, limit=10)
-        validate(timing, collection_nt.find, collection_sl.find, filter={"_id": document["_id"]}, projection=[], limit=10)
-        validate(timing, collection_nt.find, collection_sl.find, filter={"_id": document["_id"]}, projection={"_id": False}, limit=10)
-        validate(timing, collection_nt.find, collection_sl.find, {"_id": document["_id"]}, limit=10)
-        validate(timing, collection_nt.find, collection_sl.find, limit=10)
+        validate_cursor(timing, collection_nt.find, collection_sl.find, {"_id": document["_id"]}, {"_id": True, "read": True, "region": True}, limit=10)
+        validate_cursor(timing, collection_nt.find, collection_sl.find, filter={"_id": document["_id"]}, projection={"_id": True, "read": True, "region": True}, limit=10)
+        validate_cursor(timing, collection_nt.find, collection_sl.find, {"_id": document["_id"]}, projection={"_id": True, "read": True, "region": True}, limit=10)
+        validate_cursor(timing, collection_nt.find, collection_sl.find, {"_id": document["_id"]}, projection={"_id": True, "read": True}, limit=10)
+        validate_cursor(timing, collection_nt.find, collection_sl.find, {"_id": document["_id"]}, projection={}, limit=10)
+        validate_cursor(timing, collection_nt.find, collection_sl.find, {"_id": document["_id"]}, projection=[], limit=10)
+        validate_cursor(timing, collection_nt.find, collection_sl.find, filter={"_id": document["_id"]}, projection={"_id": False}, limit=10)
+        validate_cursor(timing, collection_nt.find, collection_sl.find, filter={"_id": document["_id"]}, projection={"_id": True, "read": True, "region": True}, limit=10)
+        validate_cursor(timing, collection_nt.find, collection_sl.find, filter={"_id": document["_id"]}, projection={"_id": True, "read": True}, limit=10)
+        validate_cursor(timing, collection_nt.find, collection_sl.find, filter={"_id": document["_id"]}, projection={}, limit=10)
+        validate_cursor(timing, collection_nt.find, collection_sl.find, filter={"_id": document["_id"]}, projection=[], limit=10)
+        validate_cursor(timing, collection_nt.find, collection_sl.find, filter={"_id": document["_id"]}, projection={"_id": False}, limit=10)
+        validate_cursor(timing, collection_nt.find, collection_sl.find, {"_id": document["_id"]}, limit=10)
+        validate_cursor(timing, collection_nt.find, collection_sl.find, limit=10)
 
-        validate(timing, collection_nt.find_one, collection_sl.find_one, {"_id": document["_id"]}, {"_id": True, "read": True, "region": True})
-        validate(timing, collection_nt.find_one, collection_sl.find_one, filter={"_id": document["_id"]}, projection={"_id": True, "read": True, "region": True})
-        validate(timing, collection_nt.find_one, collection_sl.find_one, {"_id": document["_id"]}, projection={"_id": True, "read": True, "region": True})
-        validate(timing, collection_nt.find_one, collection_sl.find_one, {"_id": document["_id"]}, projection={"_id": True, "read": True})
-        validate(timing, collection_nt.find_one, collection_sl.find_one, {"_id": document["_id"]}, projection={})
-        validate(timing, collection_nt.find_one, collection_sl.find_one, {"_id": document["_id"]}, projection=[])
-        validate(timing, collection_nt.find_one, collection_sl.find_one, filter={"_id": document["_id"]}, projection={"_id": False})
-        validate(timing, collection_nt.find_one, collection_sl.find_one, filter={"_id": document["_id"]}, projection={"_id": True, "read": True, "region": True})
-        validate(timing, collection_nt.find_one, collection_sl.find_one, filter={"_id": document["_id"]}, projection={"_id": True, "read": True})
-        validate(timing, collection_nt.find_one, collection_sl.find_one, filter={"_id": document["_id"]}, projection={})
-        validate(timing, collection_nt.find_one, collection_sl.find_one, filter={"_id": document["_id"]}, projection=[])
-        validate(timing, collection_nt.find_one, collection_sl.find_one, filter={"_id": document["_id"]}, projection={"_id": False})
-        validate(timing, collection_nt.find_one, collection_sl.find_one, {"_id": document["_id"]})
-        validate(timing, collection_nt.find_one, collection_sl.find_one)
+        validate_document(timing, collection_nt.find_one, collection_sl.find_one, {"_id": document["_id"]}, {"_id": True, "read": True, "region": True})
+        validate_document(timing, collection_nt.find_one, collection_sl.find_one, filter={"_id": document["_id"]}, projection={"_id": True, "read": True, "region": True})
+        validate_document(timing, collection_nt.find_one, collection_sl.find_one, {"_id": document["_id"]}, projection={"_id": True, "read": True, "region": True})
+        validate_document(timing, collection_nt.find_one, collection_sl.find_one, {"_id": document["_id"]}, projection={"_id": True, "read": True})
+        validate_document(timing, collection_nt.find_one, collection_sl.find_one, {"_id": document["_id"]}, projection={})
+        validate_document(timing, collection_nt.find_one, collection_sl.find_one, {"_id": document["_id"]}, projection=[])
+        validate_document(timing, collection_nt.find_one, collection_sl.find_one, filter={"_id": document["_id"]}, projection={"_id": False})
+        validate_document(timing, collection_nt.find_one, collection_sl.find_one, filter={"_id": document["_id"]}, projection={"_id": True, "read": True, "region": True})
+        validate_document(timing, collection_nt.find_one, collection_sl.find_one, filter={"_id": document["_id"]}, projection={"_id": True, "read": True})
+        validate_document(timing, collection_nt.find_one, collection_sl.find_one, filter={"_id": document["_id"]}, projection={})
+        validate_document(timing, collection_nt.find_one, collection_sl.find_one, filter={"_id": document["_id"]}, projection=[])
+        validate_document(timing, collection_nt.find_one, collection_sl.find_one, filter={"_id": document["_id"]}, projection={"_id": False})
+        validate_document(timing, collection_nt.find_one, collection_sl.find_one, {"_id": document["_id"]})
+        validate_document(timing, collection_nt.find_one, collection_sl.find_one)
 
-    validate_update(timing, collection_nt.update_many, collection_sl.update_many, filter={"group": 2}, update={'$set': {"read": True}})
+    validate_result(timing, collection_nt.update_many, collection_sl.update_many, filter={"group": 2}, update={'$set': {"read": True}})
 
     return [x for x, _ in timing], [x for _, x in timing]
 
 
-def validate(timing, func_nt, func_sl, *args, **kwargs):
+def validate_cursor(timing, func_nt, func_sl, *args, **kwargs):
+    """Validation for functions that returns cursor
+    """
     start = time.perf_counter()
     result_nt = [x for x in func_nt(*args, **kwargs)]
     mid = time.perf_counter()
@@ -63,7 +65,22 @@ def validate(timing, func_nt, func_sl, *args, **kwargs):
     return timing.append((mid-start, last-mid))
 
 
-def validate_update(timing, func_nt, func_sl, filter, *args, **kwargs):
+def validate_document(timing, func_nt, func_sl, *args, **kwargs):
+    """Validation for functions that returns single document
+    """
+    start = time.perf_counter()
+    result_nt = func_nt(*args, **kwargs)
+    mid = time.perf_counter()
+    result_sl = func_sl(*args, **kwargs)
+    last = time.perf_counter()
+    assert result_nt == result_sl, f"With {args = } and {kwargs = }, the assertion is failed \n " \
+                                   f"{result_nt = } should equal to {result_sl = }"
+    return timing.append((mid-start, last-mid))
+
+
+def validate_result(timing, func_nt, func_sl, filter, *args, **kwargs):
+    """Validation for functions that returns result
+    """
     start = time.perf_counter()
     result_nt = func_nt(filter, *args, **kwargs)
     mid1 = time.perf_counter()
