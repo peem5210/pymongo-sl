@@ -109,3 +109,15 @@ class CollectionSL(Collection):
         """TODO: Add caching logic here"""
 
         return self.__collection.update_one(*args, **kwargs)
+
+    @override
+    def find_and_modify(self, query={}, fields=None, *args, **kwargs):
+        ensured = self.ensure_region(query, fields)
+        updated = self.__collection.find_and_modify(query=ensured[KW.filter], fields=ensured[KW.projection],
+                                                    *args, **kwargs)
+        if isinstance(updated, dict):
+            if KW.id in updated and KW.region in updated:
+                self.__cache_client.set(updated[KW.id], updated[KW.region])
+            if ensured[KW.forced_projection]:
+                updated.pop(KW.region)
+        return updated
