@@ -111,10 +111,16 @@ class CollectionSL(Collection):
         return self.__collection.update_one(*args, **kwargs)
 
     @override
-    def find_and_modify(self, query={}, fields=None, *args, **kwargs):
-        ensured = self.ensure_region(query, fields)
-        updated = self.__collection.find_and_modify(query=ensured[KW.filter], fields=ensured[KW.projection],
-                                                    *args, **kwargs)
+    def find_and_modify(self, query={}, update=None,
+                        upsert=False, sort=None, full_response=False,
+                        manipulate=False, **kwargs):
+        ensured = self.ensure_region(query, kwargs['fields'] if 'fields' in kwargs else None)
+        if 'fields' in kwargs:
+            kwargs.pop('fields')
+        updated = self.__collection.find_and_modify(ensured[KW.filter], update,
+                                                    upsert, sort, full_response, manipulate,
+                                                    **kwargs,
+                                                    fields=ensured[KW.projection])
         if isinstance(updated, dict):
             if KW.id in updated and KW.region in updated:
                 self.__cache_client.set(updated[KW.id], updated[KW.region])
