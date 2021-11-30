@@ -1,130 +1,41 @@
-import time
 import numpy as np
 from tqdm import tqdm
 from pymongo import MongoClient
 
 from pymongo_sl import MongoClientSL
 from pymongo_sl.cache_client import LocalCacheClient
+from e2e_tests.find import validate_find
+from e2e_tests.find_one import validate_find_one
+from e2e_tests.find_and_modify import validate_find_and_modify
+from e2e_tests.update_many import validate_update_many
 from util.func import env, load_env
 
 
-load_env(name='.dev')
-
-
-def run(mongo_nt, mongo_sl, documents):
-    collection_nt = mongo_nt[env("MONGODB_DATABASE")][env("MONGODB_COLLECTION")]
-    collection_sl = mongo_sl[env("MONGODB_DATABASE")][env("MONGODB_COLLECTION")]
-
+def run(collection_nt, collection_sl, documents):
     timing = []
     for document in tqdm(documents):
-        validate_cursor(timing, collection_nt.find, collection_sl.find, {"_id": document["_id"]}, {"_id": True, "read": True, "region": True}, limit=10)
-        validate_cursor(timing, collection_nt.find, collection_sl.find, filter={"_id": document["_id"]}, projection={"_id": True, "read": True, "region": True}, limit=10)
-        validate_cursor(timing, collection_nt.find, collection_sl.find, {"_id": document["_id"]}, projection={"_id": True, "read": True, "region": True}, limit=10)
-        validate_cursor(timing, collection_nt.find, collection_sl.find, {"_id": document["_id"]}, projection={"_id": True, "read": True}, limit=10)
-        validate_cursor(timing, collection_nt.find, collection_sl.find, {"_id": document["_id"]}, projection={}, limit=10)
-        validate_cursor(timing, collection_nt.find, collection_sl.find, {"_id": document["_id"]}, projection=[], limit=10)
-        validate_cursor(timing, collection_nt.find, collection_sl.find, filter={"_id": document["_id"]}, projection={"_id": False}, limit=10)
-        validate_cursor(timing, collection_nt.find, collection_sl.find, filter={"_id": document["_id"]}, projection={"_id": True, "read": True, "region": True}, limit=10)
-        validate_cursor(timing, collection_nt.find, collection_sl.find, filter={"_id": document["_id"]}, projection={"_id": True, "read": True}, limit=10)
-        validate_cursor(timing, collection_nt.find, collection_sl.find, filter={"_id": document["_id"]}, projection={}, limit=10)
-        validate_cursor(timing, collection_nt.find, collection_sl.find, filter={"_id": document["_id"]}, projection=[], limit=10)
-        validate_cursor(timing, collection_nt.find, collection_sl.find, filter={"_id": document["_id"]}, projection={"_id": False}, limit=10)
-        validate_cursor(timing, collection_nt.find, collection_sl.find, {"_id": document["_id"]}, limit=10)
-        validate_cursor(timing, collection_nt.find, collection_sl.find, limit=10)
-
-        validate_document(timing, collection_nt.find_one, collection_sl.find_one, {"_id": document["_id"]}, {"_id": True, "read": True, "region": True})
-        validate_document(timing, collection_nt.find_one, collection_sl.find_one, filter={"_id": document["_id"]}, projection={"_id": True, "read": True, "region": True})
-        validate_document(timing, collection_nt.find_one, collection_sl.find_one, {"_id": document["_id"]}, projection={"_id": True, "read": True, "region": True})
-        validate_document(timing, collection_nt.find_one, collection_sl.find_one, {"_id": document["_id"]}, projection={"_id": True, "read": True})
-        validate_document(timing, collection_nt.find_one, collection_sl.find_one, {"_id": document["_id"]}, projection={})
-        validate_document(timing, collection_nt.find_one, collection_sl.find_one, {"_id": document["_id"]}, projection=[])
-        validate_document(timing, collection_nt.find_one, collection_sl.find_one, filter={"_id": document["_id"]}, projection={"_id": False})
-        validate_document(timing, collection_nt.find_one, collection_sl.find_one, filter={"_id": document["_id"]}, projection={"_id": True, "read": True, "region": True})
-        validate_document(timing, collection_nt.find_one, collection_sl.find_one, filter={"_id": document["_id"]}, projection={"_id": True, "read": True})
-        validate_document(timing, collection_nt.find_one, collection_sl.find_one, filter={"_id": document["_id"]}, projection={})
-        validate_document(timing, collection_nt.find_one, collection_sl.find_one, filter={"_id": document["_id"]}, projection=[])
-        validate_document(timing, collection_nt.find_one, collection_sl.find_one, filter={"_id": document["_id"]}, projection={"_id": False})
-        validate_document(timing, collection_nt.find_one, collection_sl.find_one, {"_id": document["_id"]})
-        validate_document(timing, collection_nt.find_one, collection_sl.find_one)
-
-        validate_document(timing, collection_nt.find_and_modify, collection_sl.find_and_modify, query={"_id": document["_id"]}, fields={"_id": True, "read": True, "region": True}, update={"$set": {"hello": "world"}})
-        validate_document(timing, collection_nt.find_and_modify, collection_sl.find_and_modify, {"_id": document["_id"]}, {"$set": {"hello": "world"}}, fields={"_id": True, "read": True, "region": True})
-        validate_document(timing, collection_nt.find_and_modify, collection_sl.find_and_modify, {"_id": document["_id"]}, {"$set": {"hello": "world"}}, fields={"_id": True, "read": True})
-        validate_document(timing, collection_nt.find_and_modify, collection_sl.find_and_modify, {"_id": document["_id"]}, {"$set": {"hello": "world"}}, fields={})
-        validate_document(timing, collection_nt.find_and_modify, collection_sl.find_and_modify, {"_id": document["_id"]}, {"$set": {"hello": "world"}}, fields=[])
-        validate_document(timing, collection_nt.find_and_modify, collection_sl.find_and_modify, query={"_id": document["_id"]}, fields={"_id": False}, update={"$set": {"hello": "world"}})
-        validate_document(timing, collection_nt.find_and_modify, collection_sl.find_and_modify, query={"_id": document["_id"]}, fields={"_id": True, "read": True, "region": True}, update={"$set": {"hello": "world"}})
-        validate_document(timing, collection_nt.find_and_modify, collection_sl.find_and_modify, query={"_id": document["_id"]}, fields={"_id": True, "read": True}, update={"$set": {"hello": "world"}})
-        validate_document(timing, collection_nt.find_and_modify, collection_sl.find_and_modify, query={"_id": document["_id"]}, fields={}, update={"$set": {"hello": "world"}})
-        validate_document(timing, collection_nt.find_and_modify, collection_sl.find_and_modify, query={"_id": document["_id"]}, fields=[], update={"$set": {"hello": "world"}})
-        validate_document(timing, collection_nt.find_and_modify, collection_sl.find_and_modify, query={"_id": document["_id"]}, fields={"_id": False}, update={"$set": {"hello": "world"}})
-
-    validate_result(timing, collection_nt.update_many, collection_sl.update_many, filter={"group": 2}, update={'$set': {"read": True}})
+        """for functions that queried one document should be in here"""
+        validate_find(timing, document, collection_nt, collection_sl)
+        validate_find_one(timing, document, collection_nt, collection_sl)
+        validate_find_and_modify(timing, document, collection_nt, collection_sl)
+    """functions that query multiple document"""
+    validate_update_many(timing, None, collection_nt, collection_sl)
 
     return [x for x, _ in timing], [x for _, x in timing]
 
 
-def validate_cursor(timing, func_nt, func_sl, *args, **kwargs):
-    """Validation for functions that returns cursor
-    """
-    start = time.perf_counter()
-    result_nt = [x for x in func_nt(*args, **kwargs)]
-    mid = time.perf_counter()
-    result_sl = [x for x in func_sl(*args, **kwargs)]
-    last = time.perf_counter()
-    assert result_nt == result_sl, f"With {args = } and {kwargs = }, the assertion is failed \n " \
-                                   f"{result_nt = } should equal to {result_sl = }"
-    return timing.append((mid-start, last-mid))
-
-
-def validate_document(timing, func_nt, func_sl, *args, **kwargs):
-    """Validation for functions that returns single document
-    """
-    start = time.perf_counter()
-    result_nt = func_nt(*args, **kwargs)
-    mid = time.perf_counter()
-    result_sl = func_sl(*args, **kwargs)
-    last = time.perf_counter()
-    assert result_nt == result_sl, f"With {args = } and {kwargs = }, the assertion is failed \n " \
-                                   f"{result_nt = } should equal to {result_sl = }"
-    return timing.append((mid-start, last-mid))
-
-
-def validate_result(timing, func_nt, func_sl, filter, *args, **kwargs):
-    """Validation for functions that returns result
-    """
-    start = time.perf_counter()
-    result_nt = func_nt(filter, *args, **kwargs)
-    mid1 = time.perf_counter()
-
-    # TODO: undo an update at this step, so the update will be applied to the same data on both sl and nt
-
-    mid2 = time.perf_counter()
-    result_sl = func_sl(filter, *args, **kwargs)
-    last = time.perf_counter()
-
-    # TODO: undo an update at this step as well
-
-    # TODO: add a proper validation to make sure that the updated data is the same,
-    #  for now the validation only check for the number of `matched_count` and `modified_count` only
-    print([result_nt.matched_count, result_nt.modified_count], [result_sl.matched_count, result_sl.modified_count])
-    assert [result_nt.matched_count, result_nt.modified_count] == [result_sl.matched_count, result_sl.modified_count], f"With {args = } and {kwargs = }, the assertion is failed \n " \
-                                   f"{result_nt = } should equal to {result_sl = }"
-    return timing.append((mid1-start, last-mid2))
-
-
-def measure(timing_nt, timing_sl):
-    print(f"{np.average(timing_nt) = } {np.average(timing_sl) = }")
+def measure(timing):
+    print(f"{np.average(timing[0]) = } {np.average(timing[1]) = }")
 
 
 if __name__ == '__main__':
-    # TODO: before executing the script VVV
+    # TODO: before executing the script
     """Prerequisites:
-        1. Setup .dev.env
+        1. Create .dev.env
         2. Please run local MongoDB via ./docker-compose.yaml
         3. Please populate MongoDB with `python3 research/rcache_profiling.py --populate`
     """
-
+    load_env(name='.dev')
     mongo_nt = MongoClient(
         host=env("MONGODB_HOST_SGP_1"),
         port=env("MONGODB_PORT", True),
@@ -141,5 +52,8 @@ if __name__ == '__main__':
     )
 
     documents = [x for x in mongo_nt.mongo.mongo.find(filter={"region": "SGP", "read": False}, limit=2)]
-    timing_nt, timing_sl = run(mongo_nt, mongo_sl, documents)
-    measure(timing_nt, timing_sl)
+
+    collection_nt = mongo_nt[env("MONGODB_DATABASE")][env("MONGODB_COLLECTION")]
+    collection_sl = mongo_sl[env("MONGODB_DATABASE")][env("MONGODB_COLLECTION")]
+
+    measure(run(collection_nt, collection_sl, documents))
