@@ -134,6 +134,7 @@ class CollectionSL(Collection):
                 updated.pop(KW.region)
         return updated
 
+    # TODO: remove key from cache
     @override
     def remove(self, spec_or_id=None, multi=True, **kwargs):
         if isinstance(spec_or_id, dict) and "_id" in spec_or_id:
@@ -148,3 +149,10 @@ class CollectionSL(Collection):
                         spec_or_id["region"] = region
 
         return self.__collection.remove(spec_or_id, multi, **kwargs)
+
+    @override
+    def insert_one(self, document, bypass_document_validation=False,
+                   session=None):
+        if isinstance(document, dict) and "_id" in document and "region" in document:
+            self.__cache_client.set(document["_id"], document["region"])
+        return self.__collection.insert_one(document, bypass_document_validation, session)
