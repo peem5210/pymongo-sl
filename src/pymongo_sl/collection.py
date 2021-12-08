@@ -1,3 +1,4 @@
+from bson import ObjectId
 from pymongo.collection import Collection, _UJOIN
 
 from pymongo_sl.cursor import CursorSL
@@ -30,7 +31,7 @@ class CollectionSL(Collection):
                             self.write_concern,
                             self.read_concern)
 
-    def ensure_region(self, filter, projection):
+    def ensure_region(self, filter, projection, same_region=False):
         """Construct particular filter and projection that ensure the existence of field `region`
         when queried to be used to store in cache using `~pymongo_sl.cache_client.CacheClient`.
 
@@ -47,7 +48,14 @@ class CollectionSL(Collection):
         forced_projection = False
         if filter and KW.region not in filter and KW.id in filter \
                 and """TODO: a validation to ensure that the '_id' is actually not an expression'""":
-            region = self.__cache_client.get(filter[KW.id])
+            region = None
+            id_expr = filter[KW.id]
+            if isinstance(id_expr, ObjectId):
+                region = self.__cache_client.get(filter[KW.id])
+            elif isinstance(id_expr, dict) and same_region and isinstance(id_expr.get('$in', False), list):
+                for id in id_expr['$in']:
+                    region = self.__cache_client.get(id)
+                    break  # For now, looking at region from head only
             if region is not None:
                 filter[KW.region] = region
             else:
@@ -60,8 +68,8 @@ class CollectionSL(Collection):
                 KW.forced_projection: forced_projection}
 
     @override
-    def find(self, filter=None, projection=None, *args, **kwargs):
-        updated_kwargs = self.ensure_region(filter, projection)
+    def find(self, filter=None, projection=None, same_region=False, *args, **kwargs):
+        updated_kwargs = self.ensure_region(filter, projection, same_region=same_region)
         kwargs.update(updated_kwargs)
         return CursorSL(self, *args, cache_client=self.__cache_client, **kwargs)
 
