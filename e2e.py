@@ -8,6 +8,7 @@ from e2e_tests.find import validate_find
 from e2e_tests.find_one import validate_find_one
 from e2e_tests.find_and_modify import validate_find_and_modify
 from e2e_tests.update_many import validate_update_many
+from e2e_tests.update_one import validate_update_one
 from util.func import env, load_env
 
 
@@ -18,7 +19,8 @@ def run(collection_nt, collection_sl, documents):
         validate_find(timing, document, collection_nt, collection_sl)
         validate_find_one(timing, document, collection_nt, collection_sl)
         validate_find_and_modify(timing, document, collection_nt, collection_sl)
-    """functions that query multiple document"""
+        validate_update_one(timing, document, collection_nt, collection_sl)
+    """functions that query multiple documents"""
     validate_update_many(timing, None, collection_nt, collection_sl)
 
     return [x for x, _ in timing], [x for _, x in timing]

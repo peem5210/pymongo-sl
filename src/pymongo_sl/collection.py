@@ -100,23 +100,22 @@ class CollectionSL(Collection):
     @override
     def update_many(self, filter, update, *args, **kwargs):
         """TODO: Add caching logic here"""
-        updated_kwargs = self.ensure_region(filter, [])
-        updated_kwargs.pop(KW.projection)
-        return self.__collection.update_many(updated_kwargs[KW.filter], update, *args, **kwargs)
+        ensured = self.ensure_region(filter, [])
+        return self.__collection.update_many(ensured[KW.filter], update, *args, **kwargs)
 
     @override
-    def update_one(self, *args, **kwargs):
+    def update_one(self, filter, *args, **kwargs):
         """TODO: Add caching logic here"""
-
-        return self.__collection.update_one(*args, **kwargs)
+        ensured = self.ensure_region(filter, [])
+        return self.__collection.update_one(ensured[KW.filter], *args, **kwargs)
 
     @override
     def find_and_modify(self, query={}, update=None,
                         upsert=False, sort=None, full_response=False,
                         manipulate=False, **kwargs):
-        ensured = self.ensure_region(query, kwargs['fields'] if 'fields' in kwargs else None)
-        if 'fields' in kwargs:
-            kwargs.pop('fields')
+        ensured = self.ensure_region(query, kwargs[KW.fields] if KW.fields in kwargs else None)
+        if KW.fields in kwargs:
+            kwargs.pop(KW.fields)
         updated = self.__collection.find_and_modify(ensured[KW.filter], update,
                                                     upsert, sort, full_response, manipulate,
                                                     **kwargs,
