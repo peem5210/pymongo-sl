@@ -32,11 +32,10 @@ def measure(timing):
 
 if __name__ == '__main__':
     # TODO: before executing the script
-    """Prerequisites:
-        1. Create .dev.env
-        2. Please run local MongoDB via ./docker-compose.yaml
-        3. Please populate MongoDB with `python3 research/rcache_profiling.py --populate`
-    """
+    #   1. Create .dev.env
+    #   2. Please run local MongoDB via ./docker-compose.yaml
+    #   3. Please populate MongoDB with `python3 rcache_profiling.py --populate`
+
     load_env(name='.dev')
     mongo_nt = MongoClient(
         host=env("MONGODB_HOST_SGP_1"),
