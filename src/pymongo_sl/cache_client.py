@@ -9,6 +9,9 @@ class BaseCacheClient:
     def get(self, key):
         pass
 
+    def mget(self, *keys):
+        pass
+
     def set(self, key, value):
         pass
 
@@ -21,6 +24,9 @@ class LocalCacheClient(BaseCacheClient):
         if isinstance(key, ObjectId):
             key = str(key)
         return self.mem.get(key, None)
+
+    def mget(self, *keys):
+        return [self.get(x) for x in keys]
 
     def set(self, key, value):
         if isinstance(key, ObjectId):
@@ -50,6 +56,11 @@ class CacheClient(BaseCacheClient):
         if isinstance(cached, bytes):
             cached = cached.decode('utf-8')
         return cached
+
+    def mget(self, *keys):
+        preps = [str(x) if isinstance(x, ObjectId) else x for x in keys]
+        out = self.__redis_client.mget(preps)
+        return [x.decode('utf-8') if isinstance(x, bytes) else x for x in out]
 
     def set(self, key, value):
         if isinstance(key, ObjectId):

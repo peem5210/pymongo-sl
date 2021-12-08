@@ -133,3 +133,18 @@ class CollectionSL(Collection):
             if ensured[KW.forced_projection]:
                 updated.pop(KW.region)
         return updated
+
+    @override
+    def remove(self, spec_or_id=None, multi=True, **kwargs):
+        if isinstance(spec_or_id, dict) and "_id" in spec_or_id:
+                if isinstance(spec_or_id["_id"], dict) and "$in" in spec_or_id["_id"] and isinstance(spec_or_id["_id"]["$in"], list):
+                    for region in self.__cache_client.mget(*spec_or_id["_id"]["$in"]):
+                        if region is not None:
+                            spec_or_id["region"] = region
+                            break
+                else:
+                    region = self.__cache_client.get(spec_or_id["_id"])
+                    if region is not None:
+                        spec_or_id["region"] = region
+
+        return self.__collection.remove(spec_or_id, multi, **kwargs)
