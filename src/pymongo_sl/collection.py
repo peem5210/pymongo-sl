@@ -46,8 +46,7 @@ class CollectionSL(Collection):
             to project or not
         """
         forced_projection = False
-        if filter and KW.region not in filter and KW.id in filter \
-                and """TODO: a validation to ensure that the '_id' is actually not an expression'""":
+        if filter and KW.region not in filter and KW.id in filter:
             region = None
             id_expr = filter[KW.id]
             if isinstance(id_expr, ObjectId):
