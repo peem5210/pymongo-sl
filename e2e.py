@@ -16,11 +16,11 @@ def run(collection_nt, collection_sl, documents):
     timing = []
     for document in tqdm(documents):
         """for functions that queried one document should be in here"""
-        validate_find(timing, document, collection_nt, collection_sl)
         validate_find_one(timing, document, collection_nt, collection_sl)
         validate_find_and_modify(timing, document, collection_nt, collection_sl)
         validate_update_one(timing, document, collection_nt, collection_sl)
     """functions that query multiple documents"""
+    validate_find(timing, documents, collection_nt, collection_sl)
     validate_update_many(timing, None, collection_nt, collection_sl)
 
     return [x for x, _ in timing], [x for _, x in timing]

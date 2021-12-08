@@ -1,35 +1,41 @@
 import time
 
 
-def error_log(function):
+def metric_log(function):
     def wrapper(*args, **kwargs):
-        result = None
+        nt = sl = None
         try:
-            result = function(*args, **kwargs)
+            nt, sl = function(*args, **kwargs)
         except AssertionError as e:
             print(f"[ERROR]: Assertion failed: {str(e)}")
-        return result
+        return print(f"[INFO] gained {format(sl - nt, '.5f')} sec with function: {args[1].__name__}")
     return wrapper
 
 
-@error_log
-def validate_cursor(timing, func_nt, func_sl, *args, **kwargs):
+@metric_log
+def validate_cursor(timing,  func_nt, func_sl, *args, exc_kwargs=None, **kwargs):
     """Validation for functions that returns cursor
     """
-    try:
-        start = time.perf_counter()
-        result_nt = [x for x in func_nt(*args, **kwargs)]
-        mid = time.perf_counter()
-        result_sl = [x for x in func_sl(*args, **kwargs)]
-        last = time.perf_counter()
-        assert result_nt == result_sl, f"With {args = } and {kwargs = }, the assertion is failed \n " \
-                                       f"{result_nt = } should equal to {result_sl = }"
-    except AssertionError as e:
-        print(f"[ERROR]: Assertion failed: {str(e)}")
-    return timing.append((mid - start, last - mid))
+    temp = {}
+    if exc_kwargs:
+        for exc in exc_kwargs:
+            temp[exc] = kwargs.pop(exc)
+    start = time.perf_counter()
+    result_nt = [x for x in func_nt(*args, **kwargs)]
+    mid = time.perf_counter()
+    kwargs.update(temp)
+    result_sl = [x for x in func_sl(*args, **kwargs)]
+    last = time.perf_counter()
+    assert result_nt == result_sl, f"With {args = } and {kwargs = }, the assertion is failed \n " \
+                                   f"{result_nt = } should equal to {result_sl = }"
+
+    nt = mid - start
+    sl = last - mid
+    timing.append((nt, sl))
+    return nt, sl
 
 
-@error_log
+@metric_log
 def validate_document(timing, func_nt, func_sl, *args, **kwargs):
     """Validation for functions that returns single document
     """
@@ -40,11 +46,14 @@ def validate_document(timing, func_nt, func_sl, *args, **kwargs):
     last = time.perf_counter()
     assert result_nt == result_sl, f"With {args = } and {kwargs = }, the assertion is failed \n " \
                                    f"{result_nt = } should equal to {result_sl = }"
-    return timing.append((mid - start, last - mid))
+    nt = mid - start
+    sl = last - mid
+    timing.append((nt, sl))
+    return nt, sl
 
 
-@error_log
-def validate_result(timing, undo_func, undo_kwargs, func_nt, func_sl, filter, *args, **kwargs):
+@metric_log
+def validate_result(timing, func_nt, func_sl, filter, *args,  undo_func=None, undo_kwargs=None, **kwargs):
     """Validation for functions that returns result
     """
     start = time.perf_counter()
@@ -61,7 +70,10 @@ def validate_result(timing, undo_func, undo_kwargs, func_nt, func_sl, filter, *a
     result_sl = [result_sl.matched_count, result_sl.modified_count]
     assert result_nt == result_sl, f"With {func_nt.__name__ = }, {func_sl.__name__ = }, {args = } and {kwargs = }, the assertion is failed \n " \
                                    f"{result_nt = } should equal to {result_sl = }"
-    return timing.append((mid1 - start, last - mid2))
+    nt = mid1 - start
+    sl = last - mid2
+    timing.append((nt, sl))
+    return nt, sl
 
 
 def validate_args_list(timing, validator, func_nt, func_sl, args_list):
