@@ -1,6 +1,6 @@
 from bson import ObjectId
 from pymongo.collection import Collection, _UJOIN
-
+from pymongo.cursor import Cursor
 from pymongo_sl.cursor import CursorSL
 from pymongo_sl.errors import MissingArgsError
 from pymongo_sl.common import override
@@ -67,10 +67,13 @@ class CollectionSL(Collection):
                 KW.forced_projection: forced_projection}
 
     @override
-    def find(self, filter=None, projection=None, same_region=False, *args, **kwargs):
-        updated_kwargs = self.ensure_region(filter, projection, same_region=same_region)
-        kwargs.update(updated_kwargs)
-        return CursorSL(self, *args, cache_client=self.__cache_client, **kwargs)
+    def find(self, filter=None, projection=None, same_region=False, enable_cache=False, *args, **kwargs):
+        if enable_cache:
+            updated_kwargs = self.ensure_region(filter, projection, same_region=same_region)
+            kwargs.update(updated_kwargs)
+            return CursorSL(self, *args, cache_client=self.__cache_client, **kwargs)
+        else:
+            return Cursor(self, filter=filter, projection=projection, *args, **kwargs)
 
     def _find_one_with_region(self, filter=None, projection=None, *args, **kwargs):
         updated_kwargs = self.ensure_region(filter, projection)
@@ -87,15 +90,15 @@ class CollectionSL(Collection):
         return document
 
     @override
-    def find_one(self, filter=None, *args, **kwargs):
-        if filter and KW.id in filter and KW.region not in filter \
+    def find_one(self, filter=None, projection=None, enable_cache=False, *args, **kwargs):
+        if enable_cache and filter and KW.id in filter and KW.region not in filter \
                 and """TODO: Implement the schema validation that ensure the region field
                         of the queried collection, so we won't have a miss force projection to
                         collection that doesn't have `region` field
                     """:
-            document = self._find_one_with_region(filter, *args, **kwargs)
+            document = self._find_one_with_region(filter, projection, *args, **kwargs)
         else:
-            document = self.__collection.find_one(filter, *args, **kwargs)
+            document = self.__collection.find_one(filter, projection, *args, **kwargs)
         return document
 
     @override
@@ -105,40 +108,53 @@ class CollectionSL(Collection):
         return self.__collection.update(*args, **kwargs)
 
     @override
-    def update_many(self, filter, update, *args, **kwargs):
+    def update_many(self, filter, update, enable_cache=False, *args, **kwargs):
         """TODO: Add caching logic here"""
-        ensured = self.ensure_region(filter, [])
-        return self.__collection.update_many(ensured[KW.filter], update, *args, **kwargs)
+        if enable_cache:
+            ensured = self.ensure_region(filter, [])
+            return self.__collection.update_many(ensured[KW.filter], update, *args, **kwargs)
+        else:
+            return self.__collection.update_many(filter, update, *args, **kwargs)
 
     @override
-    def update_one(self, filter, *args, **kwargs):
+    def update_one(self, filter, enable_cache=False, *args, **kwargs):
         """TODO: Add caching logic here"""
-        ensured = self.ensure_region(filter, [])
-        return self.__collection.update_one(ensured[KW.filter], *args, **kwargs)
+        if enable_cache:
+            ensured = self.ensure_region(filter, [])
+            return self.__collection.update_one(ensured[KW.filter], *args, **kwargs)
+        else:
+            return self.__collection.update_one(filter, *args, **kwargs)
 
     @override
     def find_and_modify(self, query={}, update=None,
                         upsert=False, sort=None, full_response=False,
                         manipulate=False, **kwargs):
-        ensured = self.ensure_region(query, kwargs[KW.fields] if KW.fields in kwargs else None)
-        if KW.fields in kwargs:
-            kwargs.pop(KW.fields)
-        updated = self.__collection.find_and_modify(ensured[KW.filter], update,
-                                                    upsert, sort, full_response, manipulate,
-                                                    fields=ensured[KW.projection],
-                                                    **kwargs
-                                                    )
-        if isinstance(updated, dict):
-            if KW.id in updated and KW.region in updated:
-                self.__cache_client.set(updated[KW.id], updated[KW.region])
-            if ensured[KW.forced_projection]:
-                updated.pop(KW.region)
-        return updated
+        enable_cache = kwargs.pop('enable_cache', False)
+        if enable_cache:
+            ensured = self.ensure_region(query, kwargs[KW.fields] if KW.fields in kwargs else None)
+            if KW.fields in kwargs:
+                kwargs.pop(KW.fields)
+            updated = self.__collection.find_and_modify(ensured[KW.filter], update,
+                                                        upsert, sort, full_response, manipulate,
+                                                        fields=ensured[KW.projection],
+                                                        **kwargs
+                                                        )
+            if isinstance(updated, dict):
+                if KW.id in updated and KW.region in updated:
+                    self.__cache_client.set(updated[KW.id], updated[KW.region])
+                if ensured[KW.forced_projection]:
+                    updated.pop(KW.region)
+            return updated
+        else:
+            return self.__collection.find_and_modify(query, update,
+                                              upsert, sort, full_response, manipulate,
+                                              **kwargs)
 
     # TODO: remove key from cache
     @override
     def remove(self, spec_or_id=None, multi=True, **kwargs):
-        if isinstance(spec_or_id, dict) and "_id" in spec_or_id:
+        enable_cache = kwargs.pop('enable_cache', False)
+        if enable_cache and isinstance(spec_or_id, dict) and "_id" in spec_or_id:
                 if isinstance(spec_or_id["_id"], dict) and "$in" in spec_or_id["_id"] and isinstance(spec_or_id["_id"]["$in"], list):
                     for region in self.__cache_client.mget(*spec_or_id["_id"]["$in"]):
                         if region is not None:

@@ -11,7 +11,7 @@ def metric_log(function):
         print("[INFO] gained " + format(sl - nt, '.5f') + " sec with function: " + args[1].__name__)
     return wrapper
 
-TEST_ARGS = ["same_region"]
+TEST_ARGS = ["same_region", "enable_cache"]
 
 @metric_log
 def validate_cursor(timing,  func_nt, func_sl, *args,  **kwargs):
@@ -40,9 +40,14 @@ def validate_cursor(timing,  func_nt, func_sl, *args,  **kwargs):
 def validate_document(timing, func_nt, func_sl, *args, **kwargs):
     """Validation for functions that returns single document
     """
+    temp = {}
+    for arg in TEST_ARGS:
+        if arg in kwargs:
+            temp[arg] = kwargs.pop(arg)
     start = time.time()
     result_nt = func_nt(*args, **kwargs)
     mid = time.time()
+    kwargs.update(temp)
     result_sl = func_sl(*args, **kwargs)
     last = time.time()
     assert result_nt == result_sl, "With args = " + str(args) + " and kwargs = " + str(kwargs) + ", the assertion is failed \n " \
@@ -57,10 +62,15 @@ def validate_document(timing, func_nt, func_sl, *args, **kwargs):
 def validate_result(timing, func_nt, func_sl, filter, undo_func=None, undo_kwargs=None, *args, **kwargs):
     """Validation for functions that returns result
     """
+    temp = {}
+    for arg in TEST_ARGS:
+        if arg in kwargs:
+            temp[arg] = kwargs.pop(arg)
     start = time.time()
     result_nt = func_nt(filter, *args, **kwargs)
     mid1 = time.time()
     undo_func(**undo_kwargs)
+    kwargs.update(temp)
     mid2 = time.time()
     result_sl = func_sl(filter, *args, **kwargs)
     last = time.time()
