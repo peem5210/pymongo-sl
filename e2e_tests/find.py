@@ -19,8 +19,8 @@ def validate_find(timing, documents, collection_nt, collection_sl):
         # TODO: Investigate performance issues with below function with local test
         #  Suspect that with 'region' field applied to local mongo cluster without shard, the performance would be bad
         #  compared to those normal query
-        args(filter={"_id": {"$in": [doc['_id'] for doc in documents][:10]}}, same_region=True, exc_kwargs=['same_region']),
-        args(filter={"_id": {"$in": [doc['_id'] for doc in documents][:10]}}, same_region=False, exc_kwargs=['same_region']),
-        args(filter={"_id": {"$nin": [doc['_id'] for doc in documents][:10]}}, same_region=True, exc_kwargs=['same_region']),
+        args(filter={"_id": {"$in": [doc['_id'] for doc in documents][:10]}}, same_region=True),
+        args(filter={"_id": {"$in": [doc['_id'] for doc in documents][:10]}}, same_region=False),
+        args(filter={"_id": {"$nin": [doc['_id'] for doc in documents][:10]}}, same_region=True),
         args(limit=10)
     ])

@@ -1,0 +1,7 @@
+panda
+pymongo
+redis
+python-dotenv
+pymongo
+tqdm
+numpy

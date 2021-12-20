@@ -22,12 +22,11 @@ def run(collection_nt, collection_sl, documents):
     """functions that query multiple documents"""
     validate_find(timing, documents, collection_nt, collection_sl)
     validate_update_many(timing, None, collection_nt, collection_sl)
-
     return [x for x, _ in timing], [x for _, x in timing]
 
 
 def measure(timing):
-    print(f"{np.average(timing[0]) = } {np.average(timing[1]) = }")
+    print("average nt: " + str(np.average(timing[0])) + "average sl: " + str(np.average(timing[1])))
 
 
 if __name__ == '__main__':

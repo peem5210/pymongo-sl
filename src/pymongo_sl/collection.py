@@ -125,8 +125,9 @@ class CollectionSL(Collection):
             kwargs.pop(KW.fields)
         updated = self.__collection.find_and_modify(ensured[KW.filter], update,
                                                     upsert, sort, full_response, manipulate,
-                                                    **kwargs,
-                                                    fields=ensured[KW.projection])
+                                                    fields=ensured[KW.projection],
+                                                    **kwargs
+                                                    )
         if isinstance(updated, dict):
             if KW.id in updated and KW.region in updated:
                 self.__cache_client.set(updated[KW.id], updated[KW.region])
