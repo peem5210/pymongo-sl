@@ -117,13 +117,13 @@ class CollectionSL(Collection):
             return self.__collection.update_many(filter, update, *args, **kwargs)
 
     @override
-    def update_one(self, filter, enable_cache=False, *args, **kwargs):
+    def update_one(self, filter, update, enable_cache=False, *args, **kwargs):
         """TODO: Add caching logic here"""
         if enable_cache:
             ensured = self.ensure_region(filter, [])
-            return self.__collection.update_one(ensured[KW.filter], *args, **kwargs)
+            return self.__collection.update_one(ensured[KW.filter], update, *args, **kwargs)
         else:
-            return self.__collection.update_one(filter, *args, **kwargs)
+            return self.__collection.update_one(filter, update, *args, **kwargs)
 
     @override
     def find_and_modify(self, query={}, update=None,

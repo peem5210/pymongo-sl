@@ -59,9 +59,12 @@ def validate_document(timing, func_nt, func_sl, *args, **kwargs):
 
 
 @metric_log
-def validate_result(timing, func_nt, func_sl, filter, undo_func=None, undo_kwargs=None, *args, **kwargs):
+def validate_result(timing, func_nt, func_sl, filter, *args, **kwargs):
     """Validation for functions that returns result
     """
+    undo_func = kwargs.pop("undo_func", None)
+    undo_kwargs = kwargs.pop("undo_kwargs", None)
+    assert undo_func and undo_kwargs, "undo_func and undo_kwargs must not be empty for validate result"
     temp = {}
     for arg in TEST_ARGS:
         if arg in kwargs:
