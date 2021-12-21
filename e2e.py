@@ -1,32 +1,31 @@
-import numpy as np
-from tqdm import tqdm
 from pymongo import MongoClient
 
+from e2e.report import Report
 from pymongo_sl import MongoClientSL
 from pymongo_sl.cache_client import LocalCacheClient
-from e2e_tests.find import validate_find
-from e2e_tests.find_one import validate_find_one
-from e2e_tests.find_and_modify import validate_find_and_modify
-from e2e_tests.update_many import validate_update_many
-from e2e_tests.update_one import validate_update_one
+from e2e.test.find import validate_find
+from e2e.test.find_one import validate_find_one
+from e2e.test.find_and_modify import validate_find_and_modify
+from e2e.test.update_many import validate_update_many
+from e2e.test.update_one import validate_update_one
 from util.func import env, load_env
 
 
 def run(collection_nt, collection_sl, documents):
-    timing = []
-    for document in tqdm(documents):
+    report = Report()
+    for document in documents:
         """for functions that queried one document should be in here"""
-        validate_find_one(timing, document, collection_nt, collection_sl)
-        validate_find_and_modify(timing, document, collection_nt, collection_sl)
-        validate_update_one(timing, document, collection_nt, collection_sl)
+        validate_find_one(report, document, collection_nt, collection_sl)
+        validate_find_and_modify(report, document, collection_nt, collection_sl)
+        validate_update_one(report, document, collection_nt, collection_sl)
     """functions that query multiple documents"""
-    validate_find(timing, documents, collection_nt, collection_sl)
-    validate_update_many(timing, None, collection_nt, collection_sl)
-    return [x for x, _ in timing], [x for _, x in timing]
+    validate_find(report, documents, collection_nt, collection_sl)
+    validate_update_many(report, None, collection_nt, collection_sl)
+    print(report)
 
 
-def measure(timing):
-    print("average nt: " + str(np.average(timing[0])) + "average sl: " + str(np.average(timing[1])))
+
+
 
 
 if __name__ == '__main__':
@@ -56,4 +55,4 @@ if __name__ == '__main__':
     collection_nt = mongo_nt[env("MONGODB_DATABASE")][env("MONGODB_COLLECTION")]
     collection_sl = mongo_sl[env("MONGODB_DATABASE")][env("MONGODB_COLLECTION")]
 
-    measure(run(collection_nt, collection_sl, documents))
+    run(collection_nt, collection_sl, documents)

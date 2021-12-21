@@ -31,7 +31,7 @@ class CollectionSL(Collection):
                             self.write_concern,
                             self.read_concern)
 
-    def ensure_region(self, filter, projection, same_region=False):
+    def _ensure_region(self, filter, projection, same_region=False):
         """Construct particular filter and projection that ensure the existence of field `region`
         when queried to be used to store in cache using `~pymongo_sl.cache_client.CacheClient`.
 
@@ -69,14 +69,14 @@ class CollectionSL(Collection):
     @override
     def find(self, filter=None, projection=None, same_region=False, enable_cache=False, *args, **kwargs):
         if enable_cache:
-            updated_kwargs = self.ensure_region(filter, projection, same_region=same_region)
+            updated_kwargs = self._ensure_region(filter, projection, same_region=same_region)
             kwargs.update(updated_kwargs)
             return CursorSL(self, *args, cache_client=self.__cache_client, **kwargs)
         else:
             return Cursor(self, filter=filter, projection=projection, *args, **kwargs)
 
     def _find_one_with_region(self, filter=None, projection=None, *args, **kwargs):
-        updated_kwargs = self.ensure_region(filter, projection)
+        updated_kwargs = self._ensure_region(filter, projection)
         document = self.__collection.find_one(filter=updated_kwargs[KW.filter],
                                               projection=updated_kwargs[KW.projection],
                                               *args, **kwargs)
@@ -111,7 +111,7 @@ class CollectionSL(Collection):
     def update_many(self, filter, update, enable_cache=False, *args, **kwargs):
         """TODO: Add caching logic here"""
         if enable_cache:
-            ensured = self.ensure_region(filter, [])
+            ensured = self._ensure_region(filter, None)
             return self.__collection.update_many(ensured[KW.filter], update, *args, **kwargs)
         else:
             return self.__collection.update_many(filter, update, *args, **kwargs)
@@ -120,7 +120,7 @@ class CollectionSL(Collection):
     def update_one(self, filter, update, enable_cache=False, *args, **kwargs):
         """TODO: Add caching logic here"""
         if enable_cache:
-            ensured = self.ensure_region(filter, [])
+            ensured = self._ensure_region(filter, None)
             return self.__collection.update_one(ensured[KW.filter], update, *args, **kwargs)
         else:
             return self.__collection.update_one(filter, update, *args, **kwargs)
@@ -131,14 +131,13 @@ class CollectionSL(Collection):
                         manipulate=False, **kwargs):
         enable_cache = kwargs.pop('enable_cache', False)
         if enable_cache:
-            ensured = self.ensure_region(query, kwargs[KW.fields] if KW.fields in kwargs else None)
+            ensured = self._ensure_region(query, kwargs[KW.fields] if KW.fields in kwargs else None)
             if KW.fields in kwargs:
                 kwargs.pop(KW.fields)
             updated = self.__collection.find_and_modify(ensured[KW.filter], update,
                                                         upsert, sort, full_response, manipulate,
                                                         fields=ensured[KW.projection],
-                                                        **kwargs
-                                                        )
+                                                        **kwargs)
             if isinstance(updated, dict):
                 if KW.id in updated and KW.region in updated:
                     self.__cache_client.set(updated[KW.id], updated[KW.region])
@@ -155,15 +154,15 @@ class CollectionSL(Collection):
     def remove(self, spec_or_id=None, multi=True, **kwargs):
         enable_cache = kwargs.pop('enable_cache', False)
         if enable_cache and isinstance(spec_or_id, dict) and "_id" in spec_or_id:
-                if isinstance(spec_or_id["_id"], dict) and "$in" in spec_or_id["_id"] and isinstance(spec_or_id["_id"]["$in"], list):
-                    for region in self.__cache_client.mget(*spec_or_id["_id"]["$in"]):
-                        if region is not None:
-                            spec_or_id["region"] = region
-                            break
-                else:
-                    region = self.__cache_client.get(spec_or_id["_id"])
+            if isinstance(spec_or_id["_id"], dict) and "$in" in spec_or_id["_id"] and isinstance(spec_or_id["_id"]["$in"], list):
+                for region in self.__cache_client.mget(*spec_or_id["_id"]["$in"]):
                     if region is not None:
                         spec_or_id["region"] = region
+                        break
+            else:
+                region = self.__cache_client.get(spec_or_id["_id"])
+                if region is not None:
+                    spec_or_id["region"] = region
 
         return self.__collection.remove(spec_or_id, multi, **kwargs)
 
