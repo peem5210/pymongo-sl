@@ -1,12 +1,9 @@
 [build-system]
 requires = [
-    "argparse",
-    "pandas",
-    "pymongo",
+    "pymongo=3.12.0",
     "redis",
     "python-dotenv",
     "pymongo",
-    "tqdm",
     "numpy",
     "setuptools",
     "wheel"

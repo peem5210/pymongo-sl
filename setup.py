@@ -1,11 +1,11 @@
 from setuptools import setup, find_packages
 
-VERSION = '0.0.1'
+VERSION = '0.0.2'
 DESCRIPTION = 'Like pymongo, but have cache logic on top to store a location or whatever'
 LONG_DESCRIPTION = 'Like pymongo, but have cache logic on top to store a location or whatever'
 
 setup(
-    name="pymongo_sl",
+    name="snaplogic_pymg",
     version=VERSION,
     author="PassawitPunyawat",
     author_email="passawit@punyawat.com",
@@ -13,12 +13,10 @@ setup(
     long_description=LONG_DESCRIPTION,
     package_dir={"": "src"},
     packages=find_packages(where='src'),
-    project_url="https://github.com/peem5210/pymongo-sl",
+    project_url="https://github.com/peem5210/snaplogic-pymg",
     keywords=['HelloHello'],
     classifiers=[
-        "Development Status :: Develop",
         "Intended Audience :: Education",
-        "Programming Language :: Python :: 3",
-        "Operating System :: MacOS :: MacOS X",
+        "Programming Language :: Python :: 2",
     ]
 )
