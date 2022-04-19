@@ -1,15 +1,15 @@
 from e2e.validator import validate_cursor
-
+from pymongo_sl.keywords import KW
 
 def validate_find(report, documents, collection_nt, collection_sl):
-    validate_cursor(report, collection_nt.find, collection_sl.find, {"_id": True, "read": True, "region": True}, limit=10)
-    validate_cursor(report, collection_nt.find, collection_sl.find, {"read": False}, projection={"_id": True, "read": True, "region": True}, limit=10)
-    validate_cursor(report, collection_nt.find, collection_sl.find, {}, projection={"_id": True, "read": True, "region": True}, limit=10)
+    validate_cursor(report, collection_nt.find, collection_sl.find, {"_id": True, "read": True, KW.region: True}, limit=10)
+    validate_cursor(report, collection_nt.find, collection_sl.find, {"read": False}, projection={"_id": True, "read": True, KW.region: True}, limit=10)
+    validate_cursor(report, collection_nt.find, collection_sl.find, {}, projection={"_id": True, "read": True, KW.region: True}, limit=10)
     validate_cursor(report, collection_nt.find, collection_sl.find, {"read": False}, projection={"_id": True, "read": True}, limit=10)
     validate_cursor(report, collection_nt.find, collection_sl.find, {"read": False}, projection={}, limit=10)
     validate_cursor(report, collection_nt.find, collection_sl.find, {"read": False}, projection=[], limit=10)
     validate_cursor(report, collection_nt.find, collection_sl.find, {"group": 2}, projection={"_id": False}, limit=10)
-    validate_cursor(report, collection_nt.find, collection_sl.find, filter={"group": 2}, projection={"_id": True, "read": True, "region": True}, limit=10)
+    validate_cursor(report, collection_nt.find, collection_sl.find, filter={"group": 2}, projection={"_id": True, "read": True, KW.region: True}, limit=10)
     validate_cursor(report, collection_nt.find, collection_sl.find, filter={"group": 2}, projection={"_id": True, "read": True}, limit=10)
     validate_cursor(report, collection_nt.find, collection_sl.find, filter={"group": 2}, projection={}, limit=10)
     validate_cursor(report, collection_nt.find, collection_sl.find, filter={"group": 2}, projection=[], limit=10)

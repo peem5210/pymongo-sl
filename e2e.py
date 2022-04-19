@@ -1,8 +1,11 @@
+import random
+
 from pymongo import MongoClient
 
 from e2e.report import Report
 from pymongo_sl import MongoClientSL
 from pymongo_sl.cache_client import LocalCacheClient
+from pymongo_sl.keywords import KW
 from e2e.test.find import validate_find
 from e2e.test.find_one import validate_find_one
 from e2e.test.find_and_modify import validate_find_and_modify
@@ -49,8 +52,9 @@ if __name__ == '__main__':
         password=env("MONGODB_PASSWORD"),
         cache_client=cache_client
     )
-
-    documents = [x for x in mongo_nt.mongo.mongo.find(filter={"region": "SGP", "read": False}, limit=2)]
+    mongo_nt.mongo.mongo.insert_many([{KW.region: 'SGP', "read": bool(random.randint(0, 1))} for _ in range(100)])
+    mongo_nt.mongo.mongo.insert_many([{KW.region: 'ORE', "read": bool(random.randint(0, 1))} for _ in range(100)])
+    documents = [x for x in mongo_nt.mongo.mongo.find(filter={KW.region: "SGP", "read": False}, limit=2)]
 
     collection_nt = mongo_nt[env("MONGODB_DATABASE")][env("MONGODB_COLLECTION")]
     collection_sl = mongo_sl[env("MONGODB_DATABASE")][env("MONGODB_COLLECTION")]

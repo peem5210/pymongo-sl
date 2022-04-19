@@ -2,7 +2,7 @@ class KW:
     id = "_id"
     filter = "filter"
     fields = "fields"
-    region = "region"
+    region = "ga_region"
     projection = "projection"
     document = "document"
     forced_projection = "forced_projection"

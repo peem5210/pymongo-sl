@@ -67,7 +67,8 @@ class CollectionSL(Collection):
                 KW.forced_projection: forced_projection}
 
     @override
-    def find(self, filter=None, projection=None, same_region=False, enable_cache=False, *args, **kwargs):
+    def find(self, filter=None, projection=None, same_region=False, *args, **kwargs):
+        enable_cache = kwargs.pop('enable_cache', False)
         if enable_cache:
             updated_kwargs = self._ensure_region(filter, projection, same_region=same_region)
             kwargs.update(updated_kwargs)
@@ -90,7 +91,8 @@ class CollectionSL(Collection):
         return document
 
     @override
-    def find_one(self, filter=None, projection=None, enable_cache=False, *args, **kwargs):
+    def find_one(self, filter=None, projection=None, *args, **kwargs):
+        enable_cache = kwargs.pop('enable_cache', False)
         if enable_cache and filter and KW.id in filter and KW.region not in filter \
                 and """TODO: Implement the schema validation that ensure the region field
                         of the queried collection, so we won't have a miss force projection to
@@ -108,8 +110,8 @@ class CollectionSL(Collection):
         return self.__collection.update(*args, **kwargs)
 
     @override
-    def update_many(self, filter, update, enable_cache=False, *args, **kwargs):
-        """TODO: Add caching logic here"""
+    def update_many(self, filter, update, *args, **kwargs):
+        enable_cache = kwargs.pop('enable_cache', False)
         if enable_cache:
             ensured = self._ensure_region(filter, None)
             return self.__collection.update_many(ensured[KW.filter], update, *args, **kwargs)
@@ -117,8 +119,8 @@ class CollectionSL(Collection):
             return self.__collection.update_many(filter, update, *args, **kwargs)
 
     @override
-    def update_one(self, filter, update, enable_cache=False, *args, **kwargs):
-        """TODO: Add caching logic here"""
+    def update_one(self, filter, update, *args, **kwargs):
+        enable_cache = kwargs.pop('enable_cache', False)
         if enable_cache:
             ensured = self._ensure_region(filter, None)
             return self.__collection.update_one(ensured[KW.filter], update, *args, **kwargs)
@@ -168,7 +170,8 @@ class CollectionSL(Collection):
 
     @override
     def insert_one(self, document, bypass_document_validation=False,
-                   session=None):
-        if isinstance(document, dict) and "_id" in document and "region" in document:
+                   session=None, **kwargs):
+        enable_cache = kwargs.pop('enable_cache', False)
+        if enable_cache and isinstance(document, dict) and "_id" in document and "region" in document:
             self.__cache_client.set(document["_id"], document["region"])
         return self.__collection.insert_one(document, bypass_document_validation, session)
